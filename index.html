@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex">
+  <title>Bizbaan workstation</title>
+  <link rel="icon" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://rsms.me">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <a class="logo" href="#" data-act="view" data-v="home" aria-label="Bizbaan, all projects">
+      <img class="l-light" src="assets/logo-dark.png" alt="Bizbaan Interior Construction">
+      <img class="l-dark" src="assets/logo-light.png" alt="">
+    </a>
+    <nav id="nav"></nav>
+  </header>
+  <main id="view"><p class="loading">Loading your projects.</p></main>
+  <input type="file" id="file" accept="application/json,.json" hidden>
+  <!-- Order matters: each file uses what the ones above it define. -->
+  <script src="calc.js"></script>        <!-- every sum, pure -->
+  <script src="lookups.js"></script>     <!-- public lookups: PDOK, OSRM, CBS, RDW, Bouwmaat -->
+  <script src="js/core.js"></script>     <!-- helpers, state, sync, builders -->
+  <script src="js/calc-view.js"></script>
+  <script src="js/docs-view.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/plan.js"></script>
+  <script src="js/talk.js"></script>
+  <script src="js/files.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/settings-view.js"></script>
+  <script src="js/app.js"></script>      <!-- screens, events, start -->
+</body>
+</html>
