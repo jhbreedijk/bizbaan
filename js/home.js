@@ -67,7 +67,7 @@ function homeView() {
   const hour = new Date().getHours(), owner = state.settings.company.owner;
   const hello = `${hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'}${owner ? ', ' + esc(owner) : ''}`;
   return `${need ? `<div class="banner"><span>No prices on this device yet. Load your file, or type your own values in settings.</span><button data-act="import">Load file</button></div>` : ''}
-    <div class="pagehead"><div><h1>${hello}</h1><span class="mute">${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</span></div><button class="primary" data-act="newp">New project</button></div>
+    <div class="pagehead"><div><h1>${hello}</h1><code class="stamp">${new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()} · WEEK ${weekNo()}</code></div><button class="primary" data-act="newp">New project</button></div>
     <div class="stats">${stat('To call', reqs.length, reqs.length ? `oldest ${Math.round((todayT() - oldest) / DAYMS)} days ago` : 'no new requests')}${stat('Quotes out', eur(quotes.reduce((t, x) => t + x.S.cur.incVat, 0)), `${quotes.length} waiting for a yes`)}${stat('Running', by('running').length, `${by('planned').length} more planned`)}${stat('Unpaid', eur(unpaid), `${unpaidN} invoice${unpaidN === 1 ? '' : 's'} open`)}</div>
     <div class="cols even"><section class="card now-card"><h2>Now ${O('ntodo', due.length + reqs.length ? `${due.length + reqs.length}` : '', 'amt small')}</h2>${todo || '<p class="empty">Nothing due in the next two weeks.</p>'}</section>
       <section class="card list-card"><h2>Projects ${O('pcount', `${all.length}`, 'amt small')}</h2>

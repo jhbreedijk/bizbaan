@@ -15,6 +15,23 @@ const iso = (t) => new Date(t).toISOString().slice(0, 10);
 const todayT = () => Date.parse(today());
 const dm = (t) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
+/* ---------- the sky: a faint, still starfield behind the brand surfaces ---------- */
+// Dust plus streaks running out of a vanishing point, the moment before light speed. Deterministic, never moves.
+function starfield(seed = 12, cx = 78, cy = 18, dust = 140, streaks = 40) {
+  let s = seed >>> 0;
+  const r = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const dots = Array.from({ length: dust }, () => `<circle cx="${(r() * 100).toFixed(2)}" cy="${(r() * 100).toFixed(2)}" r="${(0.05 + r() * 0.2).toFixed(3)}" opacity="${(0.1 + r() * 0.45).toFixed(2)}"/>`).join('');
+  const lines = Array.from({ length: streaks }, () => {
+    const a = r() * Math.PI * 2, near = 5 + r() * 30, len = 3 + r() * 22;
+    return `<line stroke="currentColor" stroke-linecap="round" x1="${(cx + Math.cos(a) * near).toFixed(2)}" y1="${(cy + Math.sin(a) * near).toFixed(2)}" x2="${(cx + Math.cos(a) * (near + len)).toFixed(2)}" y2="${(cy + Math.sin(a) * (near + len)).toFixed(2)}" stroke-width="${(0.04 + r() * 0.12).toFixed(3)}" opacity="${(0.06 + r() * 0.25).toFixed(2)}"/>`;
+  }).join('');
+  return `<svg class="stars" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><g fill="currentColor">${dots}${lines}<circle cx="${cx}" cy="${cy}" r="0.45" opacity="0.4"/></g></svg>`;
+}
+/** ISO week number, for the date line on Home. */
+const weekNo = (t = Date.now()) => { const d = new Date(t); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); return Math.ceil(((d - Date.UTC(d.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7); };
+/** Coordinates as a navigator writes them: 52.3636° N · 4.9365° E */
+const coords = (g) => (g ? `${g.lat.toFixed(4)}° N · ${g.lon.toFixed(4)}° E` : '');
+
 /* ---------- the project's stages ---------- */
 const STAGES = [['request', 'Request'], ['quote', 'Quote'], ['planned', 'Planned'], ['running', 'Running'], ['done', 'Done']];
 const STAGE = Object.fromEntries(STAGES);

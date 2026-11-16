@@ -44,7 +44,7 @@ function shell(body) {
   const menu = `<div class="menu"><button data-act="live">Update live prices</button><button data-act="view" data-v="private">Private sheet</button>${tpls}<button data-act="savetpl">Save as template</button><button data-act="dup">Duplicate</button><button data-act="delproject" class="danger">Delete project</button></div>`;
   const sub = [p.address && p.client, p.phone].filter(Boolean).join(' · ');
   return `<div class="phead">
-      <button class="switch" data-act="pick" title="Switch project"><b>${esc(label(p))}</b>${sub ? `<span>${esc(sub)}</span>` : ''}<i aria-hidden="true">▾</i></button>
+      <button class="switch" data-act="pick" title="Switch project"><b>${esc(label(p))}</b>${sub ? `<span>${esc(sub)}</span>` : ''}${p.geo ? `<code>${coords(p.geo)}</code>` : ''}<i aria-hidden="true">▾</i></button>
       <div class="steps">${STAGES.map(([k, name], i) => `<button class="${i < at ? 'past' : ''} ${i === at ? 'on' : ''}" data-act="status" data-s="${k}">${name}</button>`).join('')}</div>
       ${DET('pmenu', '⋯', menu, 'pop')}</div>
     ${nx ? `<div class="next"><small>Next</small><span>${esc(nx.text)}</span>${nx.btn}</div>` : ''}
@@ -244,6 +244,7 @@ document.addEventListener('drop', (e) => {
   addFiles(e.dataTransfer.files).then(() => { ui.tab = 'files'; paint(true); });
 });
 
+$('#sky').innerHTML = starfield(12, 82, 8, 170, 46);
 stamp();
 // Links can open a screen directly: ?example makes the example project, &go=plan opens a function, &tour=0 skips the walkthrough.
 const params = new URLSearchParams(location.search);

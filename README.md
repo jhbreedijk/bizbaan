@@ -8,7 +8,7 @@ Plain HTML, CSS and JavaScript. No libraries, no server, no database. Runs from 
 
 One menu on top of every screen: **Home, Client, Calculation, Quotes, Planning, Mail, Folder**, plus **?** (walkthrough) and settings. On Home, a function asks which project; inside a project the menu stays in that project, and tapping the project name switches. On a phone the menu is a row of icons; on iPad it sits under the logo with small labels.
 
-The walkthrough runs the first time the app opens, with an example project, and can be switched off under Settings, Help. `help/bizbaan-manual.pdf` and `help/bizbaan-video.mp4` explain it all; their sources are in `help/src` (`python3 help/src/video/make_video.py track.mp3` rebuilds the video with music).
+The walkthrough runs the first time the app opens, with an example project, and can be switched off under Settings, Help. `help/bizbaan-manual.pdf` and `help/bizbaan-video.mp4` explain it all; their sources are in `help/src` (`help/src/video/make_music.py` writes the original soundtrack, `make_story.py` builds the video from screenshots).
 
 Links can open a screen directly: `?example` makes the example project, `&go=plan` opens a function, `&tour=0` skips the walkthrough, `&skin=light` sets the look.
 

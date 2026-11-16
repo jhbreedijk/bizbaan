@@ -529,3 +529,41 @@ html, body { overflow-x: hidden; }
 .mail-card .row2 .f { margin-top: 0; }
 .fcard.made { grid-template-columns: 1fr; }
 .blab { z-index: 2; box-shadow: 6px 0 8px -6px #0003; }
+
+/* ======================================================================
+   The space layer, after derelease: a faint, still sky and mono labels.
+   Strongest on the brand surfaces (home, price panel, walkthrough), barely there on working screens.
+   ====================================================================== */
+:root { --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; --star: #173bb5; --star-o: 0.22; }
+@media (prefers-color-scheme: dark) { :root:not([data-skin]) { --star: #cfe0ff; --star-o: 0.55; } }
+:root[data-skin="dark"], :root[data-skin="acid"] { --star: #cfe0ff; --star-o: 0.55; }
+#sky { position: fixed; inset: 0; z-index: -1; pointer-events: none; color: var(--star); opacity: var(--star-o);
+  -webkit-mask-image: radial-gradient(ellipse 70% 55% at 80% 0%, #000 10%, transparent 80%); mask-image: radial-gradient(ellipse 70% 55% at 80% 0%, #000 10%, transparent 80%); }
+#sky .stars, .sum .stars, .tcard .stars { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+body { background: var(--bg); }
+main, .top { position: relative; }
+body:has(#view.home) #sky { opacity: calc(var(--star-o) * 1.4); }
+
+/* mono labels: section titles, figures' labels, tags, small print */
+.card > h2, .stat small, .next small, .tag, .fold, h3.fold, .sum .fig small, .f > span:first-child, dt, .meta dt, .facts dt, .brow .blab small, #tour small, .stamp, .switch code, .pick .tag, .phead .steps button, .tcard small {
+  font-family: var(--mono); }
+.card > h2 { font-size: 12px; font-weight: 500; letter-spacing: 0.2em; }
+.f > span:first-child, dt { font-size: 11.5px; letter-spacing: 0.04em; }
+.stat small { font-size: 10.5px; letter-spacing: 0.2em; }
+.tag { font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; }
+.phead .steps button { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.stamp { display: block; margin-top: 4px; font-size: 12px; letter-spacing: 0.14em; color: var(--mute); }
+.switch code { font-size: 11px; letter-spacing: 0.06em; color: var(--brand); opacity: 0.85; }
+
+/* the price panel: a small window onto the night */
+.sum { position: sticky; overflow: hidden; isolation: isolate; }
+.sum .stars { color: #cfe0ff; opacity: 0.5; z-index: -1; -webkit-mask-image: linear-gradient(200deg, #000 0%, transparent 70%); mask-image: linear-gradient(200deg, #000 0%, transparent 70%); }
+.sum .fig small { letter-spacing: 0.22em; }
+@media (max-width: 900px) { .sum .stars { display: none; } }
+
+/* the first walkthrough card */
+.tcard { overflow: hidden; isolation: isolate; }
+.tcard .stars { color: var(--star); opacity: var(--star-o); z-index: -1; }
+
+/* a faint horizon line on the dark stat, the one that matters most */
+.stat:first-child { background: radial-gradient(120% 140% at 100% 0%, var(--navy-2), var(--navy) 60%); }

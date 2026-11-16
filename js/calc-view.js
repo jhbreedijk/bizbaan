@@ -96,7 +96,7 @@ const SECS = {
   },
   sum() {
     const s = R.sched;
-    return `<div class="fig"><small>Price excl. VAT</small>${O('final', eur(R.final), 'big')}</div>
+    return `${starfield(5, 90, 10, 60, 18)}<div class="fig"><small>Price excl. VAT</small>${O('final', eur(R.final), 'big')}</div>
       <dl><div><dt>Incl. VAT</dt><dd>${O('inc', eur(R.incVat))}</dd></div><div><dt>My costs</dt><dd>${O('total', eur(R.total))}</dd></div><div><dt>After profit</dt><dd>${O('afterProfit', eur(R.afterProfit))}</dd></div><div><dt>Profit</dt><dd>${O('profit', eur(R.profit))}</dd></div>
       <div><dt>Length</dt><dd>${O('len2', n(P().days) ? `${s.weeks} wk${s.end ? ' · ' + day(s.end) : ''}` : 'no days yet')}</dd></div></dl>
       <button class="primary" data-act="view" data-v="offer">Turn into offer</button>

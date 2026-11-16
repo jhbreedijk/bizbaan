@@ -23,6 +23,7 @@ function createExample() {
   const { p } = projectFromRequest('Naam: Sanne de Wit\nTelefoon: 06 12 34 56 78\nE-mail: sanne@example.nl\nAdres: Javastraat 1, Amsterdam\nDiensten: Badkamerrenovatie / afbouw, Stuc- of schilderwerk, Loodgieterswerk\nOppervlakte: 45 m2\nDoel: Nieuwe badkamer, en de woonkamer opnieuw stucen en schilderen.\nMotivatie: Net het huis gekocht.');
   const sv = (id, v) => Object.assign((p.services[id] ??= newService(id)), { on: true, ...v });
   Object.assign(p, { example: true, client: 'Sanne de Wit (example)', days: 15, start: iso(Calc.shiftWorkdays(todayT(), 15)), rate: n(p.rate) || 50, hpd: n(p.hpd) || 9, team: n(p.team) || 2 });
+  p.geo = { lat: 52.3627, lon: 4.9279, label: 'Javastraat 1, 1094GX Amsterdam', municipality: 'Amsterdam' };
   CALL_CHECKS.forEach(([k]) => { p.call[k] = true; });
   p.call.notes = 'Bathroom 6 m², tiles chosen. Living room walls 90 m². Keys with the neighbours at number 3. Parking permit for the container needed.';
   sv('tiling', { m2: 14, labour: 40, tilePrice: 64, tileWaste: 10, gluePrice: 8.3 });
@@ -61,7 +62,7 @@ function tourPaint() {
   const box = $('#tour');
   if (ui.tour == null) { box.innerHTML = ''; return; }
   const i = ui.tour, st = TOUR[i];
-  box.innerHTML = `<div class="tspot"></div><div class="tcard" role="dialog" aria-live="polite"><small>${i + 1} of ${TOUR.length}</small><h3>${st.title}</h3><p>${st.text}</p>
+  box.innerHTML = `<div class="tspot"></div><div class="tcard" role="dialog" aria-live="polite">${i === 0 ? starfield(3, 85, 15, 50, 16) : ''}<small>${i + 1} of ${TOUR.length}</small><h3>${st.title}</h3><p>${st.text}</p>
     <div class="tfoot">${SW('Show when the app opens', 's.tour')}<span class="acts tight">${i ? '<button data-act="tourprev">Back</button>' : '<button data-act="tourskip">Skip</button>'}<button class="primary" data-act="tournext">${i === TOUR.length - 1 ? 'Done' : 'Next'}</button></span></div></div>`;
   const target = st.sel && document.querySelector(st.sel);
   if (target) target.scrollIntoView({ block: 'center', behavior: 'instant' });
