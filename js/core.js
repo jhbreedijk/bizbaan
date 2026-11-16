@@ -48,7 +48,7 @@ const blankSettings = () => ({
   fuelPer100: 8, dieselPrice: '', startAddress: '', quickPerM2: '', cranePerDay: '', toiletPerWeek: '', containerBase: '',
   payDays: 14,
   services: { tiling: {}, painting: {}, stucco: {}, flooring: {}, bathroom: {}, kitchen: {} },
-  crew: [], partners: [], mails: buildMails(), mailsVersion: MAILS_VERSION, tour: true, tourSeen: false,
+  crew: [], partners: [], mails: buildMails(), mailsVersion: MAILS_VERSION, tour: true, tourSeen: false, explain: true, videoSeen: false, pagesSeen: {},
   shops: [{ name: 'Bouwmaat', search: 'https://www.bouwmaat.nl/search?q={q}', address: 'Bouwmaat Amsterdam' }],
   company: { name: 'Bizbaan Interior Construction', owner: 'Urban', email: 'info@bizbaan.nl', phone: '', web: 'bizbaan.nl', address: '', kvk: '83629440', btw: '', iban: '', review: '' },
 });

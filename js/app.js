@@ -24,6 +24,7 @@ const ICONS = {
   cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
   folder: '<path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+  play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/>',
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/>',
   gear: '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.5 2.5A7.6 7.6 0 0 0 6.9 6.5l-2.3-.9-2 3.4 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.4 2.3-.9a7.6 7.6 0 0 0 2.6 1.5l.5 2.5h4l.5-2.5a7.6 7.6 0 0 0 2.6-1.5l2.3.9 2-3.4z"/>',
 };
@@ -34,7 +35,7 @@ function topMenu() {
   const tab = ui.view === 'project' ? ui.tab : PAGE_TAB[ui.view];
   const item = (k, name, ic, on) => `<button data-act="go" data-v="${k}" class="${on ? 'on' : ''}" ${on ? 'aria-current="page"' : ''}>${icon(ic)}<span>${name}</span></button>`;
   return `<div class="fn">${item('home', 'Home', 'home', ui.view === 'home')}${Object.entries(TABS).map(([k, t]) => item(k, t.name, t.icon, tab === k)).join('')}</div>
-    <div class="aux"><span id="saved" class="saved" aria-live="polite"></span><button data-act="tourstart" aria-label="Walkthrough" title="Walkthrough">${icon('help')}</button><button data-act="go" data-v="settings" class="${ui.view === 'settings' ? 'on' : ''}" aria-label="Settings" title="Settings">${icon('gear')}</button></div>`;
+    <div class="aux"><span id="saved" class="saved" aria-live="polite"></span><button data-act="vidopen" aria-label="Instruction video" title="Instruction video">${icon('play')}</button><button data-act="tourstart" aria-label="Walkthrough" title="Walkthrough">${icon('help')}</button><button data-act="go" data-v="settings" class="${ui.view === 'settings' ? 'on' : ''}" aria-label="Settings" title="Settings">${icon('gear')}</button></div>`;
 }
 
 /** The head of a project page: which project (tap to switch), its stage, and the one next step. */
@@ -68,13 +69,14 @@ function modalView() {
       <div class="picks">${list.map((p) => `<button class="pick ${p.id === state.current ? 'on' : ''}" data-act="pickp" data-id="${p.id}" data-tab="${m.tab}"><b>${esc(label(p))}</b><span>${esc(p.address && p.client ? p.client : '')}</span><span class="tag k-${stage(p) === 'request' ? 'request' : 'task'}">${STAGE[stage(p)]}</span></button>`).join('')}</div>
       <div class="acts"><button data-act="newp">New project</button></div>`;
   }
+  if (m.kind === 'video') body = videoModal();
   if (m.kind === 'new') {
     const tpl = state.templates.length ? `<select data-change="tplnew" aria-label="Start from a template"><option value="">Or start from a template</option>${state.templates.map((t, i) => `<option value="${i}">${esc(t.name)}</option>`).join('')}</select>` : '';
     body = `<h2>New project</h2>
       ${TA('Paste the request', 'st.draft.req', { rows: 8, ph: 'From the website form, an email or your own notes. Name, phone, address, services and sizes are picked out by themselves.\n\nLeave it empty for a phone call.' })}
       <div class="acts"><button class="primary" data-act="newrequest">Create project</button>${tpl}</div>`;
   }
-  return `<div class="scrim" data-act="closemodal"></div><div class="sheet" role="dialog" aria-modal="true"><button class="x close" data-act="closemodal" aria-label="Close">×</button>${body}</div>`;
+  return `<div class="scrim" data-act="${m.kind === 'video' ? 'vidclose' : 'closemodal'}"></div><div class="sheet ${m.kind === 'video' ? 'vsheet' : ''}" role="dialog" aria-modal="true"><button class="x close" data-act="closemodal" aria-label="Close">×</button>${body}</div>`;
 }
 
 function paint(full) {
@@ -82,11 +84,11 @@ function paint(full) {
   applySkin();
   const view = $('#view');
   if (ui.view === 'project' && !state.projects.length) ui.view = 'home';
-  if (full) { $('#nav').innerHTML = topMenu(); $('#modal').innerHTML = modalView(); document.body.classList.toggle('modal-open', !!ui.modal); }
+  if (full) { $('#nav').innerHTML = topMenu(); $('#modal').innerHTML = modalView(); document.body.classList.toggle('modal-open', !!ui.modal); setupVideo(); }
   if (!['home', 'settings'].includes(ui.view)) R = compute(P(), state.materials);
   if (ui.view !== 'project') {
     if (full) { const moved = view.dataset.k !== ui.view; view.className = ui.view; view.dataset.k = ui.view; view.innerHTML = PAGES[ui.view](); if (moved) enter(view); }
-    if (full) tourPaint();
+    if (full) { tourPaint(); introPrompt(); questionMarks(view); }
     return;
   }
   const tab = TABS[ui.tab], key = `${state.current}:${ui.tab}`;
@@ -104,7 +106,8 @@ function paint(full) {
   if (full) for (const b of view.querySelectorAll('.board')) { const a = b.querySelector('.anchor'); if (a) b.scrollLeft = Math.max(0, a.getBoundingClientRect().left - b.getBoundingClientRect().left - b.querySelector('.blab').offsetWidth - 40); }
   const h = view.querySelector('.phead .switch b');
   if (h && h.textContent !== label(P())) h.textContent = label(P());
-  if (full) tourPaint();
+  questionMarks(view);
+  if (full) { tourPaint(); introPrompt(); }
 }
 /** A new page arrives with a short, calm fade, never a hard jump. */
 const enter = (el) => { el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); };
@@ -262,6 +265,7 @@ else if (PAGES[params.get('go')]) ui.view = params.get('go');
 if (['light', 'dark', 'auto'].includes(params.get('skin'))) state.settings.skin = params.get('skin');
 if (params.get('modal') === 'new') ui.modal = { kind: 'new' };
 if (params.has('step')) tourGo(Math.min(TOUR.length - 1, +params.get('step') || 0));
+else if (!state.settings.videoSeen && state.settings.explain !== false && params.get('tour') !== '0') ui.modal = { kind: 'video' };
 else if (params.get('tour') !== '0' && state.settings.tour && !state.settings.tourSeen) tourGo(0);
 paint(true);
 prices(false).then((m) => { if (m) { ui.status = m; paint(false); } });
