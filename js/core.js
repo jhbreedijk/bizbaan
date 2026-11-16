@@ -71,10 +71,39 @@ let state = blankState();
 try { const raw = localStorage.getItem(KEY); if (raw) state = adopt(JSON.parse(raw)); } catch { /* start empty */ }
 const ui = { view: 'home', tab: 'info', status: '', open: {}, from: null, cal: 0, change: null };
 let saveTimer;
+let savedT;
+/** Shows, quietly, that his work is kept. Or loudly, that it is not. */
+function savedSignal(ok) {
+  const el = $('#saved'); if (!el) return;
+  el.textContent = ok ? 'Saved' : 'Not saved';
+  el.className = `saved on${ok ? '' : ' warn'}`;
+  clearTimeout(savedT);
+  if (ok) savedT = setTimeout(() => { el.className = 'saved'; }, 1400);
+}
 const save = () => {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { try { stamp(); localStorage.setItem(KEY, JSON.stringify(state)); } catch { ui.status = 'Could not save on this device. Use Save file in settings.'; } }, 250);
+  saveTimer = setTimeout(() => {
+    try { stamp(); localStorage.setItem(KEY, JSON.stringify(state)); savedSignal(true); }
+    catch { ui.status = 'Could not save on this device. Use Save file in settings.'; savedSignal(false); }
+  }, 250);
 };
+/** Something removed that can be taken back: no "are you sure", an Undo for six seconds instead.
+    commit runs when the six seconds are over, for what must really go (like files). */
+let toastT, pending = null;
+function undoable(text, undo, commit = () => {}) {
+  pending?.();
+  let settled = false;
+  pending = () => { if (!settled) { settled = true; commit(); } pending = null; };
+  const box = $('#toast');
+  box.innerHTML = `<span>${esc(text)}</span><button data-act="undo">Undo</button>`;
+  box.classList.add('on');
+  A.undo = () => { settled = true; pending = null; clearTimeout(toastT); box.classList.remove('on'); undo(); paint(true); return false; };
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { box.classList.remove('on'); pending?.(); }, 6000);
+}
+addEventListener('pagehide', () => pending?.());
+/** Taking something back also takes back the deletion that would travel to other devices. */
+const unDelete = (x) => { if (x?.id) for (const pre of ['p:', 'm:', 't:']) delete state.deleted[pre + x.id]; };
 
 /* ---------- one file, several devices ----------
    Every project, material, template, saved value and permit price carries the time it last changed.

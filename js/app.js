@@ -34,7 +34,7 @@ function topMenu() {
   const tab = ui.view === 'project' ? ui.tab : PAGE_TAB[ui.view];
   const item = (k, name, ic, on) => `<button data-act="go" data-v="${k}" class="${on ? 'on' : ''}" ${on ? 'aria-current="page"' : ''}>${icon(ic)}<span>${name}</span></button>`;
   return `<div class="fn">${item('home', 'Home', 'home', ui.view === 'home')}${Object.entries(TABS).map(([k, t]) => item(k, t.name, t.icon, tab === k)).join('')}</div>
-    <div class="aux"><button data-act="tourstart" aria-label="Walkthrough" title="Walkthrough">${icon('help')}</button><button data-act="go" data-v="settings" class="${ui.view === 'settings' ? 'on' : ''}" aria-label="Settings" title="Settings">${icon('gear')}</button></div>`;
+    <div class="aux"><span id="saved" class="saved" aria-live="polite"></span><button data-act="tourstart" aria-label="Walkthrough" title="Walkthrough">${icon('help')}</button><button data-act="go" data-v="settings" class="${ui.view === 'settings' ? 'on' : ''}" aria-label="Settings" title="Settings">${icon('gear')}</button></div>`;
 }
 
 /** The head of a project page: which project (tap to switch), its stage, and the one next step. */
@@ -85,12 +85,12 @@ function paint(full) {
   if (full) { $('#nav').innerHTML = topMenu(); $('#modal').innerHTML = modalView(); document.body.classList.toggle('modal-open', !!ui.modal); }
   if (!['home', 'settings'].includes(ui.view)) R = compute(P(), state.materials);
   if (ui.view !== 'project') {
-    if (full) { view.className = ui.view; view.dataset.k = ui.view; view.innerHTML = PAGES[ui.view](); }
+    if (full) { const moved = view.dataset.k !== ui.view; view.className = ui.view; view.dataset.k = ui.view; view.innerHTML = PAGES[ui.view](); if (moved) enter(view); }
     if (full) tourPaint();
     return;
   }
   const tab = TABS[ui.tab], key = `${state.current}:${ui.tab}`;
-  if (full || view.dataset.k !== key) { view.className = 'project'; view.dataset.k = key; view.innerHTML = shell(tab.layout()); full = true; }
+  if (full || view.dataset.k !== key) { const moved = view.dataset.k !== key; view.className = 'project'; view.dataset.k = key; view.innerHTML = shell(tab.layout()); full = true; if (moved) enter(view); }
   const act = document.activeElement;
   const skip = !full && act?.matches('input:not([type=checkbox]), textarea') ? act.closest('[data-sec]')?.dataset.sec : null;
   outs = {};
@@ -106,6 +106,8 @@ function paint(full) {
   if (h && h.textContent !== label(P())) h.textContent = label(P());
   if (full) tourPaint();
 }
+/** A new page arrives with a short, calm fade, never a hard jump. */
+const enter = (el) => { el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); };
 const say = (t) => { ui.status = t; const el = $('[data-o="status"]') || $('.status'); if (el) el.textContent = t; };
 
 /* ---------- actions ---------- */
@@ -166,12 +168,11 @@ Object.assign(A, {
     ui.open.pmenu = false; ui.tab = 'info';
   },
   delproject() {
-    const p = P();
-    if (!confirm(`Delete ${label(p)}, with its documents, history and files? This cannot be undone.`)) return;
-    state.projects = state.projects.filter((x) => x.id !== p.id);
+    const p = P(), at = state.projects.indexOf(p);
+    state.projects.splice(at, 1);
     state.current = state.projects[0]?.id || null;
-    removeProjectFiles(p.id);
     ui.open.pmenu = false; ui.view = 'home';
+    undoable(`${label(p)} deleted.`, () => { state.projects.splice(at, 0, p); unDelete(p); state.current = p.id; ui.view = 'project'; ui.tab = 'info'; }, () => removeProjectFiles(p.id));
   },
 });
 

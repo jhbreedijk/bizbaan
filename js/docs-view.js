@@ -197,7 +197,12 @@ Object.assign(A, {
     ui.view = 'project'; ui.tab = 'docs'; ui.status = '';
   },
   opendoc(d) { ui.docId = d.id; ui.view = 'doc'; ui.open['d:' + d.id] = false; scrollTo(0, 0); },
-  deldoc(d) { const p = P(), doc = p.docs.find((x) => x.id === d.id); if (doc && confirm(`Delete ${docName(doc)}? This cannot be undone.`)) p.docs = p.docs.filter((x) => x.id !== d.id); },
+  deldoc(d) {
+    const p = P(), k = p.docs.findIndex((x) => x.id === d.id);
+    if (k < 0) return;
+    const [doc] = p.docs.splice(k, 1);
+    undoable(`${docName(doc)} deleted.`, () => { p.docs.splice(k, 0, doc); });
+  },
   addaddition() {
     const p = P(), dr = (state.draft ??= {}), amt = r2(n(dr.addAmt));
     if (!dr.addDesc || !amt) { ui.status = 'Type what changes and its price. A minus price is less work.'; return; }

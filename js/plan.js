@@ -157,7 +157,12 @@ Object.assign(A, {
   },
   taskhide(d) { P().plan.hidden.push(d.key); },
   taskreset(d) { delete P().plan.dates[d.key]; },
-  taskdel(d) { const p = P(); p.plan.tasks = p.plan.tasks.filter((t) => 'm:' + t.id !== d.key); },
+  taskdel(d) {
+    const p = P(), k = p.plan.tasks.findIndex((t) => 'm:' + t.id === d.key);
+    if (k < 0) return;
+    const [task] = p.plan.tasks.splice(k, 1);
+    undoable('Task deleted.', () => { p.plan.tasks.splice(k, 0, task); });
+  },
   addtask() {
     const dr = (state.draft ??= {});
     if (!dr.taskTitle) { ui.status = 'Type what needs doing.'; return; }

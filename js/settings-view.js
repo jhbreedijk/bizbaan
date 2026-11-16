@@ -42,7 +42,10 @@ Object.assign(A, {
   addshop() { state.settings.shops.push({ name: '', search: '', address: '' }); },
   addmat() { state.materials.push({ id: uid(), name: '', url: '', price: '', pack: '', unit: '', perM2: '', waste: 10, services: [] }); },
   matsvc(d) { const s = state.materials[+d.i].services, i = s.indexOf(d.id); if (i < 0) s.push(d.id); else s.splice(i, 1); },
-  del(d) { get(d.list).splice(+d.i, 1); },
+  del(d) {
+    const list = get(d.list), [x] = list.splice(+d.i, 1);
+    undoable(`${x?.name || 'It'} removed.`, () => { list.splice(+d.i, 0, x); unDelete(x); });
+  },
   export() {
     stamp();
     const blob = new Blob([JSON.stringify(state, null, 1)], { type: 'application/json' });

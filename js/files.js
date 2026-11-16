@@ -151,11 +151,14 @@ Object.assign(A, {
     await FileStore.put({ ...f, folder: d.to });
     await loadFiles(p.id); paint(true);
   },
-  async fdel(d) {
-    const p = P();
-    await FileStore.del(d.id);
-    if (urlCache.has(d.id)) { URL.revokeObjectURL(urlCache.get(d.id)); urlCache.delete(d.id); }
-    await loadFiles(p.id); paint(true);
+  fdel(d) {
+    const p = P(), list = fileCache[p.id], k = list.findIndex((f) => f.id === d.id);
+    if (k < 0) return;
+    const [f] = list.splice(k, 1);
+    undoable(`${f.name} deleted.`, () => { list.splice(k, 0, f); }, async () => {
+      await FileStore.del(f.id);
+      if (urlCache.has(f.id)) { URL.revokeObjectURL(urlCache.get(f.id)); urlCache.delete(f.id); }
+    });
   },
   zip() {
     const p = P(), root = label(p).replace(/[\\/:*?"<>|]+/g, ' ').trim(), used = new Set();

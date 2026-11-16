@@ -83,7 +83,12 @@ Object.assign(A, {
     if (p.status === 'request' && (dr.talkKind || 'call') === 'call') p.call.phone = true;
     Object.assign(dr, { talkText: '', talkTask: '' });
   },
-  talkdel(d) { const p = P(); p.talk = p.talk.filter((e) => e.id !== d.id); },
+  talkdel(d) {
+    const p = P(), k = p.talk.findIndex((e) => e.id === d.id);
+    if (k < 0) return;
+    const [e] = p.talk.splice(k, 1);
+    undoable('Removed from the history.', () => { p.talk.splice(k, 0, e); });
+  },
   sendmail(d) {
     const p = P(), m = state.draft.mail, text = `${m.subject}\n\n${m.body}`;
     if (d.how === 'copy') { navigator.clipboard?.writeText(text).then(() => say('Copied.'), () => say('Copying is blocked here. Select the text and copy it.')); return false; }
