@@ -135,7 +135,7 @@ Object.assign(A, {
     (state.draft ??= {}).req = '';
     const got = ['name', 'phone', 'email', 'address'].filter((k) => r[k]);
     ui.status = text.trim() ? `Read from the message: ${got.length ? got.join(', ') : 'no contact details'}${r.services.length ? `, ${r.services.length} services` : ''}. Check it below.` : '';
-    ui.view = 'project'; ui.tab = 'info';
+    ui.view = 'project'; ui.tab = 'info'; ui.modal = null;
     if (p.address) setTimeout(() => locate(p).then(() => paint(false), () => {}), 0);
   },
   logcall() { ui.tab = 'talk'; (state.draft ??= {}).talkKind = 'call'; },

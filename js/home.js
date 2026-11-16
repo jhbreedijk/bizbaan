@@ -55,23 +55,24 @@ function homeView() {
   const soon = todayT() + 14 * DAYMS;
   const due = all.filter((p) => !['done', 'request'].includes(stage(p)))
     .flatMap((p) => openTasks(p).filter((t) => t.date && t.date <= soon).map((t) => ({ p, t }))).sort((a, b) => a.t.date - b.t.date);
+  const go = (p) => `<button class="linkish" data-act="openp" data-id="${p.id}">${esc(label(p))}</button>`;
   const todo = [
-    ...reqs.map((p) => `<div class="task"><span></span><span class="tdate">${dm(Date.parse(p.request.received || p.created))}</span><span class="tag k-request">Request</span><span class="ttl"><button class="linkish" data-act="openp" data-id="${p.id}">${esc(label(p))}</button> <small>${esc(nextStep(p)?.text || '')}</small></span>${callLink(p)}</div>`),
+    ...reqs.map((p) => `<div class="task"><span></span><span class="tdate">${dm(Date.parse(p.request.received || p.created))}</span><span class="tag k-request">Request</span><span class="ttl">${go(p)} <small>${esc(nextStep(p)?.text || '')}</small></span>${callLink(p)}</div>`),
     ...due.map(({ p, t }) => `<div class="task ${t.date < todayT() ? 'late' : ''}"><label class="tick"><input type="checkbox" data-act="taskdone" data-pid="${p.id}" data-key="${t.key}" aria-label="Done"></label><span class="tdate">${dm(t.date)}</span><span class="tag k-${t.kind}">${TASK_KINDS[t.kind]}</span>
-      <span class="ttl">${esc(t.title)} <small><button class="linkish" data-act="openp" data-id="${p.id}">${esc(label(p))}</button></small></span></div>`),
+      <span class="ttl">${esc(t.title)} <small>${go(p)}</small></span></div>`),
   ].join('');
+  const row = (p) => { const S = projectSum(p), s = Calc.schedule(p); return `<button class="prow" data-act="openp" data-id="${p.id}"><b>${esc(label(p))}</b><span class="mute">${esc(p.address && p.client ? p.client : '')}${s.start ? ` · ${dm(s.start)} to ${dm(s.end)}` : ''}</span><span class="amt">${S.agreed ? eur(S.agreed) : ''}</span></button>`; };
   const groups = STAGES.map(([k, name]) => [k, name, by(k)]).filter(([, , ps]) => ps.length);
-  const row = (p) => { const nx = nextStep(p), S = projectSum(p), s = Calc.schedule(p); return `<button class="prow" data-act="openp" data-id="${p.id}"><b>${esc(label(p))}</b><span class="mute">${esc(p.client && p.address ? p.client : '')}${s.start ? ` · ${dm(s.start)} to ${dm(s.end)}` : ''}</span><span>${esc(nx?.text || '')}</span><span class="amt">${S.agreed ? eur(S.agreed) : ''}</span></button>`; };
-  const tpl = state.templates.length ? `<select data-change="tplnew" aria-label="New from template"><option value="">New from a template</option>${state.templates.map((t, i) => `<option value="${i}">${esc(t.name)}</option>`).join('')}</select>` : '';
   const need = state.settings.profit === '' && !state.materials.length;
+  const hour = new Date().getHours(), owner = state.settings.company.owner;
+  const hello = `${hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'}${owner ? ', ' + esc(owner) : ''}`;
   return `${need ? `<div class="banner"><span>No prices on this device yet. Load your file, or type your own values in settings.</span><button data-act="import">Load file</button></div>` : ''}
+    <div class="pagehead"><div><h1>${hello}</h1><span class="mute">${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</span></div><button class="primary" data-act="newp">New project</button></div>
     <div class="stats">${stat('To call', reqs.length, reqs.length ? `oldest ${Math.round((todayT() - oldest) / DAYMS)} days ago` : 'no new requests')}${stat('Quotes out', eur(quotes.reduce((t, x) => t + x.S.cur.incVat, 0)), `${quotes.length} waiting for a yes`)}${stat('Running', by('running').length, `${by('planned').length} more planned`)}${stat('Unpaid', eur(unpaid), `${unpaidN} invoice${unpaidN === 1 ? '' : 's'} open`)}</div>
-    <div class="cols"><section class="card"><h2>Now ${O('ntodo', due.length + reqs.length ? `${due.length + reqs.length}` : '', 'amt small')}</h2>${todo || '<p class="empty">Nothing due in the next two weeks.</p>'}</section>
-    <section class="card"><h2>New request</h2>${TA('', 'st.draft.req', { rows: 6, ph: 'Paste the request from the website, an email or your own notes. Leave it empty for a phone call.' })}
-      <div class="acts"><button class="primary" data-act="newrequest">Add request</button>${tpl}</div><p class="status">${esc(ui.status)}</p></section></div>
-    <section class="card">${calendar(all.filter((p) => stage(p) !== 'done'))}</section>
-    <section class="card"><h2>Projects ${O('pcount', `${all.length}`, 'amt small')}</h2>
-      ${groups.map(([k, name, ps]) => (k === 'done' ? DET('done', `Done · ${ps.length}`, ps.map(row).join('')) : `<h3 class="fold">${name} <small>${ps.length}</small></h3>${ps.map(row).join('')}`)).join('') || '<p class="empty">No projects yet. Add the first request above.</p>'}</section>`;
+    <div class="cols even"><section class="card now-card"><h2>Now ${O('ntodo', due.length + reqs.length ? `${due.length + reqs.length}` : '', 'amt small')}</h2>${todo || '<p class="empty">Nothing due in the next two weeks.</p>'}</section>
+      <section class="card list-card"><h2>Projects ${O('pcount', `${all.length}`, 'amt small')}</h2>
+        ${groups.map(([k, name, ps]) => (k === 'done' ? DET('done', `Done · ${ps.length}`, ps.map(row).join('')) : `<h3 class="fold">${name} <small>${ps.length}</small></h3>${ps.map(row).join('')}`)).join('') || '<p class="empty">No projects yet. Tap New project to start one.</p>'}</section></div>
+    <section class="card cal-card">${calendar(all.filter((p) => stage(p) !== 'done'))}</section>`;
 }
 
 Object.assign(A, {
@@ -79,7 +80,7 @@ Object.assign(A, {
     state.current = d.id;
     const st = stage(fix(byId(d.id)));
     ui.view = 'project'; ui.tab = { request: 'info', quote: 'calc', planned: 'plan', running: 'plan', done: 'docs' }[st] || 'info';
-    ui.status = ''; ui.change = null; scrollTo(0, 0);
+    ui.status = ''; ui.change = null; ui.modal = null; scrollTo(0, 0);
   },
   cal(d) { ui.cal = +d.d ? ui.cal + +d.d : 0; },
   accept() {

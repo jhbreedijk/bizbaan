@@ -24,21 +24,6 @@ function stage(p) {
   return p.status;
 }
 
-/* ---------- mail templates he starts with; all editable in settings ---------- */
-const DEFAULT_MAILS = [
-  { id: 'ack-nl', lang: 'nl', name: 'Aanvraag ontvangen', subject: 'Uw aanvraag bij Bizbaan', body: 'Beste {client},\n\nBedankt voor uw aanvraag. Ik heb hem goed ontvangen en kijk er met plezier naar.\n\nOm een goede inschatting te maken bel ik u graag even. Op welk nummer en wanneer kan ik u het beste bereiken?\n\nMet vriendelijke groet,\n{owner}\n{company}' },
-  { id: 'offer-nl', lang: 'nl', name: 'Offerte sturen', subject: 'Offerte {offer}', body: 'Beste {client},\n\nZoals beloofd stuur ik u hierbij de offerte voor {address}. Het totaal is {total} inclusief btw.\n\nIk heb alles zo duidelijk mogelijk opgeschreven. Heeft u vragen, of wilt u iets aanpassen? Bel of app me gerust.\n\nMet vriendelijke groet,\n{owner}' },
-  { id: 'plan-nl', lang: 'nl', name: 'Planning bevestigen', subject: 'We starten op {start}', body: 'Beste {client},\n\nDe planning staat. We beginnen op {start} en verwachten op {end} klaar te zijn, ongeveer {weeks} weken.\n\nEen paar dagen van tevoren laat ik u weten hoe laat we komen en wat we van u nodig hebben, zoals sleutels en een plek voor het materiaal.\n\nMet vriendelijke groet,\n{owner}' },
-  { id: 'change-nl', lang: 'nl', name: 'Planning gewijzigd', subject: 'Wijziging in de planning', body: 'Beste {client},\n\nEr is iets veranderd in de planning, en dat laat ik u meteen weten. We zijn nu klaar op {end}.\n\n{change}\n\nVerandert dit ook iets aan de prijs, dan hoort u dat altijd eerst van mij. Bel me gerust als u vragen heeft.\n\nMet vriendelijke groet,\n{owner}' },
-  { id: 'invoice-nl', lang: 'nl', name: 'Factuur sturen', subject: 'Factuur {invoice}', body: 'Beste {client},\n\nHierbij factuur {invoice} van {amount}. U vindt hem in de bijlage.\n\nDank u wel, en tot snel.\n\nMet vriendelijke groet,\n{owner}' },
-  { id: 'review-nl', lang: 'nl', name: 'Om een review vragen', subject: 'Bedankt, en een kleine vraag', body: 'Beste {client},\n\nHet werk aan {address} is klaar. Bedankt voor uw vertrouwen en de fijne samenwerking.\n\nZou u een paar woorden over ons willen schrijven? Voor een klein bedrijf als het onze maakt dat echt verschil: {review}\n\nMet hartelijke groet,\n{owner}' },
-  { id: 'ack-en', lang: 'en', name: 'Request received', subject: 'Your request to Bizbaan', body: 'Dear {client},\n\nThank you for your request. It arrived safely and I am looking forward to it.\n\nTo give you a good estimate I would like to call you briefly. Which number, and what time suits you best?\n\nKind regards,\n{owner}\n{company}' },
-  { id: 'offer-en', lang: 'en', name: 'Send the quote', subject: 'Quote {offer}', body: 'Dear {client},\n\nAs promised, here is the quote for {address}. The total is {total} including VAT.\n\nI wrote everything down as clearly as I could. Any questions, or something you would like to change? Call or message me any time.\n\nKind regards,\n{owner}' },
-  { id: 'plan-en', lang: 'en', name: 'Confirm the planning', subject: 'We start on {start}', body: 'Dear {client},\n\nThe planning is set. We start on {start} and expect to finish on {end}, about {weeks} weeks.\n\nA few days before, I will let you know what time we arrive and what we need from you, such as keys and a spot for the materials.\n\nKind regards,\n{owner}' },
-  { id: 'change-en', lang: 'en', name: 'Planning changed', subject: 'A change in the planning', body: 'Dear {client},\n\nSomething changed in the planning, and I want you to hear it straight away. We now finish on {end}.\n\n{change}\n\nIf this changes the price as well, you will always hear it from me first. Call me any time with questions.\n\nKind regards,\n{owner}' },
-  { id: 'invoice-en', lang: 'en', name: 'Send an invoice', subject: 'Invoice {invoice}', body: 'Dear {client},\n\nPlease find invoice {invoice} for {amount} attached.\n\nThank you, and see you soon.\n\nKind regards,\n{owner}' },
-  { id: 'review-en', lang: 'en', name: 'Ask for a review', subject: 'Thank you, and a small favour', body: 'Dear {client},\n\nThe work at {address} is finished. Thank you for your trust and the good cooperation.\n\nWould you write a few words about us? For a small company like ours it really makes a difference: {review}\n\nWarm regards,\n{owner}' },
-];
 
 /* ---------- state ---------- */
 const blankSettings = () => ({
@@ -46,7 +31,7 @@ const blankSettings = () => ({
   fuelPer100: 8, dieselPrice: '', startAddress: '', quickPerM2: '', cranePerDay: '', toiletPerWeek: '', containerBase: '',
   payDays: 14,
   services: { tiling: {}, painting: {}, stucco: {}, flooring: {}, bathroom: {}, kitchen: {} },
-  crew: [], partners: [], mails: clone(DEFAULT_MAILS),
+  crew: [], partners: [], mails: buildMails(), mailsVersion: MAILS_VERSION, tour: true, tourSeen: false,
   shops: [{ name: 'Bouwmaat', search: 'https://www.bouwmaat.nl/search?q={q}', address: 'Bouwmaat Amsterdam' }],
   company: { name: 'Bizbaan Interior Construction', owner: 'Urban', email: 'info@bizbaan.nl', phone: '', web: 'bizbaan.nl', address: '', kvk: '83629440', btw: '', iban: '', review: '' },
 });
@@ -57,6 +42,12 @@ const adopt = (raw) => {
   s.settings.services = { ...b.settings.services, ...(raw.settings?.services || {}) };
   s.settings.company = { ...b.settings.company, ...(raw.settings?.company || {}) };
   s.seq = { ...b.seq, ...(raw.seq || {}) };
+  // Templates from before the tones: the old defaults make way for the new set, his own stay.
+  if ((raw.settings?.mailsVersion || 1) < MAILS_VERSION && raw.settings?.mails) {
+    const old = new Set(['ack', 'offer', 'plan', 'change', 'invoice', 'review'].flatMap((k) => [k + '-nl', k + '-en']));
+    s.settings.mails = [...raw.settings.mails.filter((m) => !old.has(m.id)), ...buildMails()];
+    s.settings.mailsVersion = MAILS_VERSION;
+  }
   return s;
 };
 let state = blankState();
@@ -132,6 +123,7 @@ function fix(p) {
   p.status ??= (p.docs || []).some((d) => d.type === 'offer') ? 'quote' : 'request';
   p.docs ??= []; p.talk ??= []; p.call ??= {}; p.request ??= {}; p.crew ??= [];
   p.phone ??= ''; p.email ??= '';
+  if (p.offer) p.offer.withPlan ??= 1;
   p.plan ??= {};
   const pl = p.plan;
   pl.tasks ??= []; pl.done ??= {}; pl.dates ??= {}; pl.hidden ??= []; pl.crew ??= {}; pl.partner ??= {};

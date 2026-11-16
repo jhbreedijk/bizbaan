@@ -195,7 +195,7 @@ Object.assign(A, {
   chgmail() {
     const c = ui.change, p = P();
     ui.change = null;
-    A.mailtpl({ id: `change-${p.offer.lang}`, change: c.why || '' });
+    A.mailpick({ sit: "change", change: c.why || "" });
     ui.tab = 'talk';
   },
   chgclose() { ui.change = null; },

@@ -4,6 +4,14 @@ One place for a whole renovation project: the request, the call, the calculation
 
 Plain HTML, CSS and JavaScript. No libraries, no server, no database. Runs from GitHub Pages, or from any static server on this folder.
 
+## Finding your way
+
+One menu on top of every screen: **Home, Client, Calculation, Quotes, Planning, Mail, Folder**, plus **?** (walkthrough) and settings. On Home, a function asks which project; inside a project the menu stays in that project, and tapping the project name switches. On a phone the menu is a row of icons; on iPad it sits under the logo with small labels.
+
+The walkthrough runs the first time the app opens, with an example project, and can be switched off under Settings, Help. `help/bizbaan-manual.pdf` and `help/bizbaan-video.mp4` explain it all; their sources are in `help/src` (`python3 help/src/video/make_video.py track.mp3` rebuilds the video with music).
+
+Links can open a screen directly: `?example` makes the example project, `&go=plan` opens a function, `&tour=0` skips the walkthrough, `&skin=light` sets the look.
+
 ## How a project moves
 
 | Stage | Where he works | What the app does |
@@ -28,8 +36,10 @@ Every project shows one **Next** line with the one thing to do. **Home** shows t
 | `js/docs-view.js` | Documents tab: offers, additions and less work, invoices, private sheet |
 | `js/request.js` | reading requests, Info tab, call checklist |
 | `js/plan.js` | Planning tab, derived tasks, the day grid |
-| `js/talk.js` | Talk tab: history, mail and WhatsApp from templates |
-| `js/files.js` | Files tab: storage in the browser, folders, zip |
+| `js/mails.js` | 90 mail templates: 15 situations, warm, business and short, Dutch and English |
+| `js/talk.js` | Mail: write from a template, log calls, the history |
+| `js/tour.js` | the walkthrough and the example project |
+| `js/files.js` | Folder: ten numbered folders, storage in the browser, zip with printable documents |
 | `js/home.js` | Home: next steps, calendar, projects by stage |
 | `js/settings-view.js` | Settings: values, materials, crew, partners, mail templates, look, file |
 | `js/app.js` | screens, navigation, events, start |

@@ -4,6 +4,14 @@
 const TXT = {
   nl: {
     titles: { offer: 'Offerte', addition: 'Meerwerk', less: 'Minderwerk', invoice: 'Factuur' }, client: 'Voor', project: 'Project', date: 'Datum', due: 'Betalen vóór', no: 'Nummer', area: 'Oppervlakte', work: 'Werkzaamheden', price: 'Prijs',
+    plan: {
+      title: 'Planning', intro: (a, b, w) => `We beginnen op ${a} en verwachten op ${b} klaar te zijn: ${w} weken, van maandag tot en met vrijdag.`,
+      part: 'Onderdeel', when: 'Wanneer', prep: 'Wat we van u vragen',
+      asks: (c) => ['Maak de ruimtes zo leeg mogelijk, of laat ons weten wat er moet blijven staan.', 'Regel een sleutel, of iemand die ons de eerste ochtend binnenlaat.', 'Laat de buren of de VvE weten dat we komen.', c ? 'De container en de vergunning regelen wij.' : 'Het afval voeren wij af.'],
+      pay: 'Betalen in stappen', payIntro: 'U betaalt in delen, gelijk op met de voortgang. Zo weet u altijd waar u aan toe bent.',
+      moment: 'Moment', share: 'Deel', amount: 'Bedrag',
+      steps: ['Aanbetaling bij akkoord', 'Bij het tekenen van de overeenkomst', 'Uiterlijk 14 dagen voor de start', 'Halverwege het werk', 'Na de oplevering'],
+    },
     ex: 'Totaal exclusief btw', vat: (r, b) => `Btw ${r}% over ${b}`, inc: 'Totaal inclusief btw', known: 'Goed om te weten', term: 'Termijn',
     lines: { transport: 'Transport', parking: 'Parkeren', waste: 'Afval en afvoer', crane: 'Kraan', toilet: 'Mobiel toilet', materials: 'Materialen', other: 'Overig' },
     intro: (c, a) => `Beste ${c || 'klant'},\n\nBedankt voor het prettige gesprek en voor uw vertrouwen. Hieronder vindt u wat ik voor u ga doen${a ? ' aan de ' + a : ''} en wat het kost. Ik heb het bewust kort en helder gehouden.`,
@@ -15,6 +23,14 @@ const TXT = {
   },
   en: {
     titles: { offer: 'Quote', addition: 'Additional work', less: 'Less work', invoice: 'Invoice' }, client: 'For', project: 'Project', date: 'Date', due: 'Pay before', no: 'Number', area: 'Area', work: 'Work', price: 'Price',
+    plan: {
+      title: 'Planning', intro: (a, b, w) => `We start on ${a} and expect to finish on ${b}: ${w} weeks, Monday to Friday.`,
+      part: 'Part', when: 'When', prep: 'What we ask from you',
+      asks: (c) => ['Clear the rooms as much as possible, or tell us what should stay.', 'Arrange a key, or someone to let us in on the first morning.', 'Let the neighbours or the building association know we are coming.', c ? 'We arrange the waste container and the permit.' : 'We take care of the waste.'],
+      pay: 'Paying in steps', payIntro: 'You pay in parts, in step with the progress. So you always know where you stand.',
+      moment: 'Moment', share: 'Share', amount: 'Amount',
+      steps: ['Deposit when you agree', 'When the agreement is signed', 'At the latest 14 days before the start', 'Halfway through the work', 'After completion'],
+    },
     ex: 'Total excluding VAT', vat: (r, b) => `VAT ${r}% on ${b}`, inc: 'Total including VAT', known: 'Good to know', term: 'Instalment',
     lines: { transport: 'Transport', parking: 'Parking', waste: 'Waste removal', crane: 'Crane', toilet: 'Site toilet', materials: 'Materials', other: 'Other' },
     intro: (c, a) => `Dear ${c || 'client'},\n\nThank you for the good conversation and for your trust. Below you will find what I will do for you${a ? ' at ' + a : ''} and what it costs. I kept it short and clear on purpose.`,
@@ -52,8 +68,34 @@ function draftOffer() {
   return finish({
     type: 'offer', lang: L, date: today(), client: p.client, address: p.geo?.label || p.address, m2: n(p.m2),
     lines: R.lines.filter((l) => brk || l.key.startsWith('svc:')).map((l) => ({ label: name(l.key), price: brk ? l.price : null })),
-    exBy: { ...R.exBy }, vatBy: { ...R.vatBy }, whole: true, text: { intro: offerText(p, 'intro'), notes: offerText(p, 'notes'), closing: offerText(p, 'closing') },
+    exBy: { ...R.exBy }, vatBy: { ...R.vatBy }, whole: true, plan: o.withPlan ? planSnapshot(p, R.incVat) : null, text: { intro: offerText(p, 'intro'), notes: offerText(p, 'notes'), closing: offerText(p, 'closing') },
   });
+}
+/** The planning and the payment steps, frozen into the offer so the client gets one document. */
+function planSnapshot(p, inc) {
+  const s = Calc.schedule(p);
+  if (!s.start) return null;
+  const tl = Calc.timeline(p), last = s.wd.length - 1, idx = (i) => Math.min(last, Math.max(0, Math.floor(i)));
+  const phases = tl.map((x) => ({ id: x.id, from: idx(x.from), to: idx(Math.ceil(x.from + x.days) - 1) })).map((x) => ({ ...x, fromT: s.wd[x.from], toT: s.wd[x.to] }));
+  // The steps from bizbaan.nl: 1% when agreed, 5% at signing, 45% before the start, 40% halfway, the rest after completion.
+  const parts = [[1, null], [5, null], [45, s.start - 14 * Calc.DAY], [40, s.wd[idx(s.wd.length / 2)]], [null, s.end]];
+  let used = 0;
+  const pay = parts.map(([pct, date]) => {
+    const amount = pct == null ? Math.round(inc - used) : Math.round((inc * pct) / 100);
+    used += amount;
+    return { pct: pct ?? 100 - 91, amount, date };
+  });
+  return { start: s.start, end: s.end, weeks: s.weeks, days: s.wd.length, phases, pay, container: !!p.costs.containerOn };
+}
+function planPaper(pl, L) {
+  const T = TXT[L].plan, short = (t) => new Date(t).toLocaleDateString(L === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const rows = pl.phases.map((x) => `<tr><td>${esc(SVC[x.id][L])}</td><td>${short(x.fromT)}${x.toT !== x.fromT ? ' – ' + short(x.toT) : ''}</td><td class="gbar"><span style="left:${(x.from / pl.days) * 100}%;width:${((x.to - x.from + 1) / pl.days) * 100}%"></span></td></tr>`).join('');
+  const pay = pl.pay.map((x, i) => `<tr><td>${T.steps[i]}${x.date ? ` <span class="mute">· ${short(x.date)}</span>` : ''}</td><td>${x.pct}%</td><td>${eur(x.amount)}</td></tr>`).join('');
+  return `<section class="pplan"><h2>${T.title}</h2><p>${T.intro(day(pl.start, L, true), day(pl.end, L, true), pl.weeks)}</p>
+    <table class="gantt"><thead><tr><th>${T.part}</th><th>${T.when}</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    <h2>${T.prep}</h2><ul class="asks">${T.asks(pl.container).map((a) => `<li>${a}</li>`).join('')}</ul>
+    <h2>${T.pay}</h2><p>${T.payIntro}</p>
+    <table class="paysteps"><thead><tr><th>${T.moment}</th><th>${T.share}</th><th>${T.amount}</th></tr></thead><tbody>${pay}</tbody></table></section>`;
 }
 /** What the project adds up to: the latest offer plus additions, against what was invoiced and paid. */
 function projectSum(p) {
@@ -81,6 +123,7 @@ function paper(d) {
     ${ce('intro')}
     <table><thead><tr><th>${T.work}</th>${priced ? `<th>${T.price}</th>` : ''}</tr></thead><tbody>${d.lines.map((l) => `<tr><td>${esc(l.label)}</td>${priced ? `<td>${eur(l.price, dec)}</td>` : ''}</tr>`).join('')}</tbody></table>
     <table class="totals"><tbody><tr><td>${T.ex}</td><td>${eur(d.exVat, dec)}</td></tr>${Object.keys(d.exBy).sort().map((r) => `<tr><td>${T.vat(r, eur(d.exBy[r], dec))}</td><td>${eur(vatOf(r), dec)}</td></tr>`).join('')}<tr class="grand"><td>${T.inc}</td><td>${eur(d.incVat, dec)}</td></tr></tbody></table>
+    ${d.plan ? planPaper(d.plan, d.lang) : ''}
     ${d.text?.notes !== undefined ? `<h2>${T.known}</h2>${ce('notes')}` : ''}
     ${ce('closing')}
     ${paperFoot(co)}</article>`;
@@ -88,8 +131,9 @@ function paper(d) {
 function offerView() {
   const n0 = docsOf(P(), 'offer').length;
   return `<div class="tools"><button data-act="back">Back</button>
-      ${SEG('p.offer.detail', [['simple', 'Simple'], ['breakdown', 'Breakdown']])}${SEG('p.offer.lang', [['nl', 'Nederlands'], ['en', 'English']])}
+      ${SEG('p.offer.detail', [['simple', 'Simple'], ['breakdown', 'Breakdown']])}${SEG('p.offer.withPlan', [[1, 'With planning'], [0, 'Price only']])}${SEG('p.offer.lang', [['nl', 'Nederlands'], ['en', 'English']])}
       <button data-act="resettext">Reset text</button><button data-act="print">Print or save PDF</button><button class="primary" data-act="saveoffer">${n0 ? `Save as version ${n0 + 1}` : 'Save offer'}</button></div>
+    ${!Calc.schedule(P()).start && P().offer.withPlan ? '<p class="hint center">Give the project a start date in Planning and the planning and payment steps appear in the offer.</p>' : ''}
     <p class="hint center">Click any text on the page to change it. ${n0 ? 'Saving keeps the earlier versions as they were.' : 'Save it to keep this exact version with the project.'}</p>
     ${paper(draftOffer())}`;
 }
