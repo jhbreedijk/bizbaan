@@ -98,8 +98,21 @@ const contactLinks = (p) => [
   p.email && `<a class="btn" href="mailto:${esc(p.email)}">Email</a>`,
 ].filter(Boolean).join('');
 
-const infoLayout = () => `<div class="cols"><section class="card" data-sec="who"></section><section class="card" data-sec="call"></section></div><section class="card" data-sec="ask"></section>`;
+const infoLayout = () => `<div class="projects"><aside class="card plist" data-sec="plist"></aside><div class="pdetail"><section class="card phero" data-sec="hero"></section>
+  <div class="cols"><section class="card" data-sec="who"></section><section class="card" data-sec="call"></section></div><section class="card" data-sec="ask"></section></div></div>`;
 const INFO = {
+  plist() {
+    const cur = P(), order = STAGES.map(([k]) => k);
+    const groups = STAGES.map(([k, name]) => [k, name, state.projects.map(fix).filter((p) => stage(p) === k)]).filter(([, , ps]) => ps.length);
+    const row = (p) => `<button class="lrow2 ${p.id === cur.id ? 'on' : ''}" data-act="selp" data-id="${p.id}"><b>${esc(label(p))}</b><span>${esc(p.address && p.client ? p.client : STAGE[stage(p)])}</span></button>`;
+    return `<div class="plhead"><h2>Projects</h2><button class="primary small" data-act="newp">New</button></div>
+      ${groups.map(([k, name, ps]) => (k === 'done' ? DET('pdone', `Done · ${ps.length}`, ps.map(row).join('')) : `<h3 class="fold">${name} <small>${ps.length}</small></h3>${ps.map(row).join('')}`)).join('')}`;
+  },
+  hero() {
+    const p = P(), nx = nextStep(p), sub = [p.address && p.client, p.phone].filter(Boolean).join(' · ');
+    return `<div class="herotop"><div><h1>${esc(label(p))}</h1>${sub ? `<span class="mute">${esc(sub)}</span>` : ''}${p.geo ? `<code class="coords">${coords(p.geo)}</code>` : ''}</div><span class="grow"></span>${stageSelect(p)}${projectMenu()}</div>
+      ${nx ? `<div class="next"><small>Next</small><span>${esc(nx.text)}</span>${nx.btn}</div>` : ''}`;
+  },
   who() {
     const p = P();
     return `<h2>Client</h2><div class="grid">
@@ -138,6 +151,7 @@ Object.assign(A, {
     ui.view = 'project'; ui.tab = 'info'; ui.modal = null;
     if (p.address) setTimeout(() => locate(p).then(() => paint(false), () => {}), 0);
   },
+  selp(d) { state.current = d.id; ui.change = null; ui.status = ''; },
   logcall() { ui.tab = 'talk'; (state.draft ??= {}).talkKind = 'call'; },
   tocalc() {
     const p = P();

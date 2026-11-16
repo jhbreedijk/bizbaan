@@ -4,17 +4,17 @@
 
 const TOUR = [
   { go: 'home', title: 'Welcome to your workstation', text: 'Every project in one place, from the first request to the last invoice. This takes two minutes. Stop any time; the question mark on top starts it again.' },
-  { go: 'home', sel: '#nav .fn', title: 'The main functions, always on top', text: 'Home, and everything you do for a project: Client, Calculation, Quotes, Planning, Mail and Folder. Tap one and pick the project.' },
+  { go: 'home', sel: '#nav .fn', title: 'The main functions, always on top', text: 'Home, and everything you do for a project: Projects, Calculation, Quotes, Planning, Email and Project folder. Tap one and pick the project.' },
   { go: 'home', sel: '.pagehead .primary', title: 'New project', text: 'Paste a request from the website or an email. Name, phone, address, services and sizes fill in by themselves. Leave it empty after a phone call.' },
   { go: 'home', sel: '.now-card', title: 'Now', text: 'Requests to call and everything due in the next two weeks, from all projects. Tick things off right here.' },
   { go: 'home', sel: '.cal-card', title: 'The calendar', text: 'Six weeks of every project and every person. Red means someone is booked twice.' },
-  { go: 'info', sel: '.phead', title: 'Inside a project', text: 'This is an example project. Tap the name to switch projects. The stages show where it is, and Next always says the one thing to do now.' },
-  { go: 'info', sel: '[data-sec="call"]', title: 'Client', text: 'Who they are and what they asked. The checklist makes sure you know everything before you calculate.' },
+  { go: 'info', sel: '.plist', title: 'Projects', text: 'All your projects on the left. Pick one and its details open on the right. This is an example project.' },
+  { go: 'info', sel: '.phero', title: 'The project', text: 'Its stage, and Next: the one thing to do now. Below: the client, what they asked, and the checklist for the first call.' },
   { go: 'calc', sel: '.sum', title: 'Calculation', text: 'Pick the jobs and fill in the sizes. The price builds itself. Turn into offer makes the quote.' },
   { go: 'docs', sel: '.tabbody .stats', title: 'Quotes', text: 'Every version of the quote, extra work, invoices and what is paid. The quote carries the planning and the payment steps, as one document.' },
   { go: 'plan', sel: '[data-sec="timeline"]', title: 'Planning', text: 'The timeline lays itself out. Buying, booking and invoicing get a date. If something changes, say so here and it asks whether the price changes.' },
-  { go: 'talk', sel: '.mail-card', title: 'Mail', text: 'Pick a situation, a tone and a language. The text fills in with this project. Open it in your mail or in WhatsApp.' },
-  { go: 'files', sel: '.folder-card .drop', title: 'Folder', text: 'Ten numbered folders per project. Drop photos anywhere on a project and they find their folder. Download it all as one zip.' },
+  { go: 'talk', sel: '.mail-card', title: 'Email', text: 'Pick a situation, a tone and a language. The text fills in with this project. Open it in your mail or in WhatsApp.' },
+  { go: 'files', sel: '.folder-card .drop', title: 'Project folder', text: 'Ten numbered folders per project. Drop photos anywhere on a project and they find their folder. Download it all as one zip.' },
   { go: 'home', sel: '#nav .aux', title: 'Help and settings', text: 'The question mark starts this walkthrough again. Settings holds your prices, crew, partners and templates. Delete the example project from its ⋯ menu when you are done.' },
 ];
 

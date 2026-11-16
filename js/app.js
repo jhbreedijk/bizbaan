@@ -5,12 +5,12 @@
 // The functions in the top menu. Each is a page of the open project: a layout with named sections.
 // While he types, every section except the one with the cursor is redrawn, so totals follow along without losing his place.
 const TABS = {
-  info: { name: 'Client', icon: 'user', layout: infoLayout, secs: INFO },
+  info: { name: 'Projects', icon: 'user', layout: infoLayout, secs: INFO },
   calc: { name: 'Calculation', icon: 'calc', layout: calcView, secs: SECS },
   docs: { name: 'Quotes', icon: 'doc', layout: () => '<div data-sec="main"></div>', secs: { main: docsView } },
   plan: { name: 'Planning', icon: 'cal', layout: planLayout, secs: PLAN },
-  talk: { name: 'Mail', icon: 'mail', layout: talkLayout, secs: TALK },
-  files: { name: 'Folder', icon: 'folder', layout: () => '<div data-sec="main"></div>', secs: { main: filesView } },
+  talk: { name: 'Email', icon: 'mail', layout: talkLayout, secs: TALK },
+  files: { name: 'Project folder', icon: 'folder', layout: () => '<div data-sec="main"></div>', secs: { main: filesView } },
 };
 // Whole pages, drawn in one go. Offer, document and private sheet belong to a project function for the menu.
 const PAGES = { home: homeView, offer: offerView, doc: docView, private: privateView, settings: settingsView };
@@ -38,16 +38,21 @@ function topMenu() {
 }
 
 /** The head of a project page: which project (tap to switch), its stage, and the one next step. */
-function shell(body) {
-  const p = P(), st = stage(p), at = STAGES.findIndex(([k]) => k === st), nx = nextStep(p);
+/** The ⋯ menu of a project. */
+function projectMenu() {
   const tpls = state.templates.map((t, i) => `<button data-act="tplnew" data-i="${i}">New from “${esc(t.name)}”</button>`).join('');
-  const menu = `<div class="menu"><button data-act="live">Update live prices</button><button data-act="view" data-v="private">Private sheet</button>${tpls}<button data-act="savetpl">Save as template</button><button data-act="dup">Duplicate</button><button data-act="delproject" class="danger">Delete project</button></div>`;
-  const sub = [p.address && p.client, p.phone].filter(Boolean).join(' · ');
+  return DET('pmenu', '⋯', `<div class="menu"><button data-act="live">Update live prices</button><button data-act="view" data-v="private">Private sheet</button>${tpls}<button data-act="savetpl">Save as template</button><button data-act="dup">Duplicate</button><button data-act="delproject" class="danger">Delete project</button></div>`, 'pop');
+}
+/** The stage of a project, as a small dropdown. */
+const stageSelect = (p) => `<label class="stagesel"><span>Stage</span><select data-change="stage" aria-label="Stage">${STAGES.map(([k, name]) => `<option value="${k}" ${stage(p) === k ? 'selected' : ''}>${name}</option>`).join('')}</select></label>`;
+
+/** The head of a project page: which project (tap to switch), its stage, the menu. Projects has its own list instead. */
+function shell(body) {
+  if (ui.tab === 'info') return `<div class="tabbody tab-info">${body}</div>`;
+  const p = P(), sub = [p.address && p.client, p.phone].filter(Boolean).join(' · ');
   return `<div class="phead">
-      <button class="switch" data-act="pick" title="Switch project"><b>${esc(label(p))}</b>${sub ? `<span>${esc(sub)}</span>` : ''}${p.geo ? `<code>${coords(p.geo)}</code>` : ''}<i aria-hidden="true">▾</i></button>
-      <div class="steps">${STAGES.map(([k, name], i) => `<button class="${i < at ? 'past' : ''} ${i === at ? 'on' : ''}" data-act="status" data-s="${k}">${name}</button>`).join('')}</div>
-      ${DET('pmenu', '⋯', menu, 'pop')}</div>
-    ${nx ? `<div class="next"><small>Next</small><span>${esc(nx.text)}</span>${nx.btn}</div>` : ''}
+      <button class="switch" data-act="pick" title="Switch project"><b>${esc(label(p))}</b>${sub ? `<span>${esc(sub)}</span>` : ''}<i aria-hidden="true">▾</i></button>
+      <span class="grow"></span>${stageSelect(p)}${projectMenu()}</div>
     <div class="tabbody tab-${ui.tab}">${body}</div>`;
 }
 
@@ -117,6 +122,7 @@ Object.assign(A, {
   go(d) {
     ui.modal = null;
     if (!TABS[d.v]) return A.view(d);
+    if (d.v === 'info' && state.projects.length) { ui.view = 'project'; ui.tab = 'info'; ui.status = ''; scrollTo(0, 0); return; }
     if (ui.view === 'project' || PAGE_TAB[ui.view]) { ui.view = 'project'; ui.tab = d.v; ui.status = ''; scrollTo(0, 0); return; }
     if (!state.projects.length) { ui.modal = { kind: 'new' }; return; }
     if (state.projects.length === 1) return A.pickp({ id: state.projects[0].id, tab: d.v });
@@ -214,6 +220,7 @@ document.addEventListener('change', (e) => {
     };
     fr.readAsText(el.files[0]);
   }
+  if (el.dataset.change === 'stage') { A.status({ s: el.value }); paint(true); }
   if (el.dataset.change === 'tplnew' && el.value !== '') { A.tplnew({ i: el.value }); paint(true); }
   if (el.dataset.change === 'addfiles' && el.files.length) { addFiles(el.files, P(), el.dataset.folder || '').then(() => paint(true)); }
   // Lists and dates outside the calculation redraw once he leaves the field.

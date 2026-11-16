@@ -61,7 +61,7 @@ function homeView() {
     ...due.map(({ p, t }) => `<div class="task ${t.date < todayT() ? 'late' : ''}"><label class="tick"><input type="checkbox" data-act="taskdone" data-pid="${p.id}" data-key="${t.key}" aria-label="Done"></label><span class="tdate">${dm(t.date)}</span><span class="tag k-${t.kind}">${TASK_KINDS[t.kind]}</span>
       <span class="ttl">${esc(t.title)} <small>${go(p)}</small></span></div>`),
   ].join('');
-  const row = (p) => { const S = projectSum(p), s = Calc.schedule(p); return `<button class="prow" data-act="openp" data-id="${p.id}"><b>${esc(label(p))}</b><span class="mute">${esc(p.address && p.client ? p.client : '')}${s.start ? ` · ${dm(s.start)} to ${dm(s.end)}` : ''}</span><span class="amt">${S.agreed ? eur(S.agreed) : ''}</span></button>`; };
+  const row = (p) => { const S = projectSum(p), s = Calc.schedule(p); return `<button class="prow" data-act="openp" data-id="${p.id}"><b>${esc(label(p))}</b><span class="mute">${esc(p.address && p.client ? p.client : '')}${s.start ? ` · ${dm(s.start)} to ${dm(s.end)}` : ''}</span><span class="amt">${S.agreed ? eur(S.agreed) : ''}</span>${(() => { const nx = nextStep(p); return nx ? `<small class="nx">Next: ${esc(nx.text)}</small>` : ''; })()}</button>`; };
   const groups = STAGES.map(([k, name]) => [k, name, by(k)]).filter(([, , ps]) => ps.length);
   const need = state.settings.profit === '' && !state.materials.length;
   const hour = new Date().getHours(), owner = state.settings.company.owner;
