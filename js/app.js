@@ -260,10 +260,11 @@ stamp();
 // Links can open a screen directly: ?example makes the example project, &go=plan opens a function, &tour=0 skips the walkthrough.
 const params = new URLSearchParams(location.search);
 if (params.has('example')) exampleProject();
-if (TABS[params.get('go')]) { state.current = exampleProject().id; ui.view = 'project'; ui.tab = params.get('go'); }
+if (TABS[params.get('go')]) { state.current = state.projects.find((p) => p.id === state.current && !p.deleted)?.id || exampleProject().id; ui.view = 'project'; ui.tab = params.get('go'); }
 else if (PAGES[params.get('go')]) ui.view = params.get('go');
 if (['light', 'dark', 'auto'].includes(params.get('skin'))) state.settings.skin = params.get('skin');
 if (params.get('modal') === 'new') ui.modal = { kind: 'new' };
+if (params.get('modal') === 'video') ui.modal = { kind: 'video' };
 if (params.has('step')) tourGo(Math.min(TOUR.length - 1, +params.get('step') || 0));
 else if (!state.settings.videoSeen && state.settings.explain !== false && params.get('tour') !== '0') ui.modal = { kind: 'video' };
 else if (params.get('tour') !== '0' && state.settings.tour && !state.settings.tourSeen) tourGo(0);
