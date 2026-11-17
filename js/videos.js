@@ -3,9 +3,9 @@
    All of it switches off under Settings, Help. The parts come from help/bizbaan-video-chapters.json. */
 'use strict';
 
-const VIDEO = 'help/bizbaan-video.mp4?v=4';
+const VIDEO = 'help/bizbaan-video.mp4?v=5';
 let CHAPTERS = null;
-fetch('help/bizbaan-video-chapters.json?v=4').then((r) => (r.ok ? r.json() : null)).then((j) => { CHAPTERS = j; if (j && ui.view !== 'home') paint(true); }).catch(() => {});
+fetch('help/bizbaan-video-chapters.json?v=5').then((r) => (r.ok ? r.json() : null)).then((j) => { CHAPTERS = j; if (j && ui.view !== 'home') paint(true); }).catch(() => {});
 const PAGE_NAME = () => ({ home: 'Home', ...Object.fromEntries(Object.entries(TABS).map(([k, t]) => [k, t.name])) });
 const pageKey = () => (ui.view === 'project' ? ui.tab : ui.view === 'home' ? 'home' : null);
 
