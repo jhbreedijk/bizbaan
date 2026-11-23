@@ -7,7 +7,7 @@ function nextStep(p) {
   const go = (tab, text) => `<button data-act="view" data-v="${tab}">${text}</button>`;
   if (st === 'request') {
     if (!p.phone) return { text: 'Get a phone number. The website form only gives an email.', btn: go('talk', 'Write to them') };
-    const left = CALL_CHECKS.filter(([k]) => !p.call[k]).length;
+    const left = callChecks().filter(([k]) => !p.call[k]).length;
     return left ? { text: `Call ${p.client || 'them'} and fill the gaps: ${left} things still unknown.`, btn: callLink(p) } : { text: 'Everything is known. Make the calculation.', btn: go('calc', 'Calculate') };
   }
   if (st === 'quote') {

@@ -55,7 +55,7 @@
     throw new Error('No diesel price');
   }
 
-  /** Paid street parking within 400 m: the hourly rate of every paid zone found, highest first. Zero rates are left out. */
+  /** Paid street parking within 400 m: the hourly rate and any day ticket of every paid zone found, nearest first. Zero rates are left out. */
   async function parking(pt) {
     const rdw = (ds, q) => json(`https://opendata.rdw.nl/resource/${ds}.json?` + new URLSearchParams(q));
     const f2 = (x) => (Math.floor(x * 100) / 100).toFixed(2);
@@ -82,16 +82,22 @@
       if (!regs.length) return null;
       const frames = await rdw('ixf8-gtwq', { areamanagerid: a.areamanagerid, regulationid: regs[regs.length - 1].regulationid });
       const codes = [...new Set(frames.map((f) => f.farecalculationcode).filter(Boolean))].slice(0, 4);
-      let hourly = 0;
+      // Steps of an hour or less are the hourly rate. A longer step is a day ticket: a price for the whole day, not per hour.
+      let hourly = 0, dayCap = 0;
       for (const code of codes) {
         const parts = (await rdw('534e-5vdg', { areamanagerid: a.areamanagerid, farecalculationcode: code })).filter((f) => (f.enddatefarepart || '99999999') >= todayNum && (f.startdatefarepart || '0') <= todayNum);
-        for (const f of parts) hourly = Math.max(hourly, (parseFloat(f.amountfarepart) * 60) / (parseFloat(f.stepsizefarepart) || 1));
+        for (const f of parts) {
+          const amt = parseFloat(f.amountfarepart) || 0, step = parseFloat(f.stepsizefarepart) || 0;
+          if (amt <= 0) continue;
+          if (step > 0 && step <= 60) hourly = Math.max(hourly, (amt * 60) / step);
+          else if (step >= 240) dayCap = dayCap ? Math.min(dayCap, amt) : amt;
+        }
       }
-      return hourly > 0 ? { hourly: Math.round(hourly * 100) / 100, area: a.areaid, metres: Math.round(m) } : null;
+      return hourly > 0 ? { hourly: Math.round(hourly * 100) / 100, dayCap: Math.round(dayCap * 100) / 100, area: a.areaid, metres: Math.round(m) } : null;
     };
     const found = (await Promise.all(near.slice(0, 10).map((x) => rate(x).catch(() => null)))).filter(Boolean);
     if (!found.length) throw new Error('No paid parking found within 400 m');
-    return found.sort((p, q) => q.hourly - p.hourly);
+    return found.sort((p, q) => p.metres - q.metres);
   }
 
   /** Current public price and stock for a Bouwmaat product link. */

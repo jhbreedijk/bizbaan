@@ -90,6 +90,8 @@ const CALL_CHECKS = [
   ['access', 'Keys, neighbours, house rules of the building (VvE)'],
   ['photos', 'Photos or drawings received'],
 ];
+/** The checklist as Urban words it: his own list once he has edited it, otherwise the list above. */
+const callChecks = () => state.settings.callChecks || CALL_CHECKS;
 const waNumber = (phone) => { const d = String(phone).replace(/\D/g, ''); return d.startsWith('00') ? d.slice(2) : d.startsWith('0') ? '31' + d.slice(1) : d; };
 const callLink = (p) => (p.phone ? `<a class="btn" href="tel:${esc(p.phone.replace(/\s/g, ''))}">Call</a>` : '');
 const contactLinks = (p) => [
@@ -123,11 +125,14 @@ const INFO = {
       <div class="acts">${contactLinks(p) || '<span class="hint">No phone number yet. The website form only asks for an email.</span>'}<button data-act="logcall">Log a call</button></div>`;
   },
   call() {
-    const p = P(), done = CALL_CHECKS.filter(([k]) => p.call[k]).length;
-    return `<h2>Before you calculate ${O('calls', `${done} of ${CALL_CHECKS.length}`, 'amt small')}</h2>
-      <div class="checks">${CALL_CHECKS.map(([k, l]) => `<label class="check"><input type="checkbox" data-bind="p.call.${k}" ${p.call[k] ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>
+    const p = P(), list = callChecks(), done = list.filter(([k]) => p.call[k]).length;
+    if (ui.editChecks) return `<h2>Before you calculate <button class="link small" data-act="checksedit">Done</button></h2>
+      <div class="rows">${list.map(([, l], i) => `<div class="row1">${F('', `s.callChecks.${i}.1`, { type: 'text', cls: 'wide' })}<button class="x" data-act="checkdel" data-i="${i}" aria-label="Remove">×</button></div>`).join('')}</div>
+      <div class="acts"><button data-act="checkadd">Add a line</button>${state.settings.callChecks ? '<button data-act="checkreset">Back to the standard list</button>' : ''}</div>`;
+    return `<h2>Before you calculate ${O('calls', `${done} of ${list.length}`, 'amt small')} <button class="link small" data-act="checksedit">Edit</button></h2>
+      <div class="checks">${list.map(([k, l]) => `<label class="check"><input type="checkbox" data-bind="p.call.${k}" ${p.call[k] ? 'checked' : ''}><span>${esc(l)}</span></label>`).join('')}</div>
       ${TA('Call notes', 'p.call.notes', { ph: 'What they told you. Sizes, wishes, worries.' })}
-      <div class="acts"><button data-act="tocalc">${done === CALL_CHECKS.length ? 'All there. Calculate' : 'Calculate anyway'}</button></div>`;
+      <div class="acts"><button data-act="tocalc">${done === list.length ? 'All there. Calculate' : 'Calculate anyway'}</button></div>`;
   },
   ask() {
     const p = P(), q = p.request, wish = [q.wishStart && 'start ' + q.wishStart, q.wishEnd && 'end ' + q.wishEnd].filter(Boolean).join(', ');
@@ -158,4 +163,12 @@ Object.assign(A, {
     if (p.status === 'request') { p.status = 'quote'; logTalk(p, 'system', 'Info complete. On to the calculation.'); }
     ui.tab = 'calc';
   },
+});
+
+Object.assign(A, {
+  /** Urban's own wording for the first-call checklist. Editing copies the standard list once, then it is his. */
+  checksedit() { if (!ui.editChecks && !state.settings.callChecks) state.settings.callChecks = CALL_CHECKS.map((x) => [...x]); ui.editChecks = !ui.editChecks; },
+  checkadd() { state.settings.callChecks.push(['own' + uid(), '']); },
+  checkdel(d) { const l = state.settings.callChecks, i = +d.i, [x] = l.splice(i, 1); undoable('Line removed.', () => l.splice(i, 0, x)); },
+  checkreset() { const old = state.settings.callChecks; state.settings.callChecks = null; ui.editChecks = false; undoable('Back to the standard list.', () => { state.settings.callChecks = old; }); },
 });

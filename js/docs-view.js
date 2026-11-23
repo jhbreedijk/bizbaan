@@ -64,7 +64,7 @@ const docName = (d) => `${docTitle(d)} ${d.no}`;
 /** The offer as it stands in the calculation right now. Saving freezes a copy. */
 function draftOffer() {
   const p = P(), o = p.offer, L = o.lang, T = TXT[L], brk = o.detail === 'breakdown';
-  const name = (key) => (key.startsWith('svc:') ? SVC[key.slice(4)][L] : T.lines[key]);
+  const name = (key) => { if (!key.startsWith('svc:')) return T.lines[key]; const id = key.slice(4), d = p.services[id]?.desc?.trim(); return SVC[id].fixed && d ? (id === 'extra' ? d : `${SVC[id][L]}: ${d}`) : SVC[id][L]; };
   return finish({
     type: 'offer', lang: L, date: today(), client: p.client, address: p.geo?.label || p.address, m2: n(p.m2),
     lines: R.lines.filter((l) => brk || l.key.startsWith('svc:')).map((l) => ({ label: name(l.key), price: brk ? l.price : null })),
@@ -171,7 +171,7 @@ function privateView() {
   let rows = '';
   for (const s of R.services) {
     const hrs = s.hours ? `${num(s.hours)} h at ${eur(p.rate)} / ${eur(n(p.rate) * f)}` : s.kind === 'm2' ? `${num(p.services[s.id].m2)} m² at ${eur(p.services[s.id].labour, 2)}` : '';
-    rows += tr(`${SVC[s.id].en} labour`, hrs, s.labour) + tr(`${SVC[s.id].en} materials`, '', s.mats + s.lib) + tr(SVC[s.id].en, s.kind === 'sub' ? 'subcontractor' : 'pieces', s.other);
+    rows += tr(`${SVC[s.id].en} labour`, hrs, s.labour) + tr(`${SVC[s.id].en} materials`, '', s.mats + s.lib) + tr(SVC[s.id].en, s.kind === 'sub' ? (SVC[s.id].fixed ? 'fixed price' : 'subcontractor') : 'pieces', s.other);
   }
   rows += tr('Materials added by hand', '', R.manual.reduce((t, x) => t + x.cost, 0));
   rows += tr('Transport', `${num(p.costs.km)} km × ${num(p.days)} days`, c.transport) + tr('Parking', '', c.parking) + tr('Floor extra', `floor ${num(p.floor)}, no elevator`, c.floorExtra) + tr('Crane', '', c.crane) + tr('Container and permit', p.geo?.municipality || '', c.container) + tr('Toilet', `${R.sched.weeks} weeks`, c.toilet) + tr('Waste', '', c.waste) + tr('Additional costs', '', c.additional);

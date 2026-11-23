@@ -11,7 +11,9 @@
     { id: 'flooring', en: 'Flooring', nl: 'Vloeren', kind: 'm2', incl: true },
     { id: 'bathroom', en: 'Bathroom', nl: 'Badkamer', kind: 'm2', matM2: true },
     { id: 'kitchen', en: 'Kitchen', nl: 'Keuken', kind: 'm2', matM2: true },
-    { id: 'extra', en: 'Extra', nl: 'Overige werkzaamheden', kind: 'm2' },
+    { id: 'extra', en: 'Extra', nl: 'Overige werkzaamheden', kind: 'sub', fixed: true },
+    { id: 'dormer', en: 'Dormer', nl: 'Dakkapel', kind: 'sub', fixed: true },
+    { id: 'foundation', en: 'Foundation', nl: 'Fundering', kind: 'sub', fixed: true },
     { id: 'furniture', en: 'Custom furniture', nl: 'Meubels op maat', kind: 'pieces' },
     { id: 'plumbing', en: 'Plumbing', nl: 'Loodgieterswerk', kind: 'sub' },
     { id: 'electra', en: 'Electra', nl: 'Elektra', kind: 'sub' },
@@ -19,7 +21,7 @@
   ];
   const SVC = Object.fromEntries(SERVICES.map((s) => [s.id, s]));
   // The order work happens on site: break out, pipes and wiring, walls, wet rooms, then the finish.
-  const BUILD_ORDER = ['demolition', 'plumbing', 'electra', 'ac', 'stucco', 'tiling', 'bathroom', 'kitchen', 'extra', 'painting', 'flooring', 'furniture'];
+  const BUILD_ORDER = ['demolition', 'foundation', 'dormer', 'plumbing', 'electra', 'ac', 'stucco', 'tiling', 'bathroom', 'kitchen', 'extra', 'painting', 'flooring', 'furniture'];
 
   const n = (v) => {
     if (typeof v === 'number') return isFinite(v) ? v : 0;
@@ -134,7 +136,8 @@
       } else if (def.kind === 'm2') {
         if (sv.mode === 'hour') { hours = n(sv.workers) * n(sv.days) * hpd; labour = hours * rate; }
         else labour = n(sv.m2) * n(sv.labour);
-        if (def.id === 'tiling' && !sv.inclMat) mats = n(sv.m2) * n(sv.tilePrice) * (1 + n(sv.tileWaste) / 100) + n(sv.m2) * n(sv.gluePrice);
+        // glue and primer come from the saved materials linked to tiling, each switched on or off in the project
+        if (def.id === 'tiling' && !sv.inclMat) mats = n(sv.m2) * n(sv.tilePrice) * (1 + n(sv.tileWaste) / 100);
         if (def.matM2) mats = n(sv.m2) * n(sv.matM2);
       } else if (def.kind === 'pieces') {
         other = sum((sv.pieces || []).map((x) => n(x.price) * (x.qty === '' || x.qty === undefined ? 1 : n(x.qty))));
@@ -164,7 +167,7 @@
       parking: n(c.parkingDay) * days,
       floorExtra: labour * floorF,
       crane: up && c.craneOn ? n(c.craneDays) * n(c.cranePerDay) : 0,
-      container: c.containerOn ? n(c.containerBase) + n(c.permit) : 0,
+      container: c.containerOn ? n(c.containerBase) * (c.containerQty === '' || c.containerQty === undefined ? 1 : n(c.containerQty)) + n(c.permit) : 0,
       toilet: c.toiletOn ? sched.weeks * n(c.toiletPerWeek) : 0,
       waste: n(c.waste),
       additional: n(c.additional),

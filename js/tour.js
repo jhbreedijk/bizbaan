@@ -24,7 +24,7 @@ function createExample() {
   const sv = (id, v) => Object.assign((p.services[id] ??= newService(id)), { on: true, ...v });
   Object.assign(p, { example: true, client: 'Sanne de Wit (example)', days: 15, start: iso(Calc.shiftWorkdays(todayT(), 15)), rate: n(p.rate) || 50, hpd: n(p.hpd) || 9, team: n(p.team) || 2 });
   p.geo = { lat: 52.3627, lon: 4.9279, label: 'Javastraat 1, 1094GX Amsterdam', municipality: 'Amsterdam' };
-  CALL_CHECKS.forEach(([k]) => { p.call[k] = true; });
+  callChecks().forEach(([k]) => { p.call[k] = true; });
   p.call.notes = 'Bathroom 6 m², tiles chosen. Living room walls 90 m². Keys with the neighbours at number 3. Parking permit for the container needed.';
   sv('tiling', { m2: 14, labour: 40, tilePrice: 64, tileWaste: 10, gluePrice: 8.3 });
   sv('bathroom', { m2: 6, labour: 180, matM2: 120 });

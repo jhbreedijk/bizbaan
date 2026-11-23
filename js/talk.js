@@ -11,7 +11,7 @@ const STAGE_MAILS = { request: ['ack', 'details', 'visit', 'decline'], quote: ['
 function fillMail(text, p, L = p.offer.lang, extra = {}) {
   const s = Calc.schedule(p), S = projectSum(p), co = state.settings.company, inv = docsOf(p, 'invoice').at(-1);
   const v = {
-    client: p.client || (L === 'nl' ? 'klant' : 'client'), address: p.geo?.label || p.address || '',
+    client: firstName(p) || (L === 'nl' ? 'klant' : 'client'), name: p.client || (L === 'nl' ? 'klant' : 'client'), address: p.geo?.label || p.address || '',
     start: s.start ? day(s.start, L, true) : '…', end: s.end ? day(s.end, L, true) : '…', weeks: s.weeks || '…',
     offer: S.cur?.no || '', total: eur(S.cur?.incVat ?? compute(p, state.materials).incVat),
     invoice: inv?.no || '', amount: inv ? eur(inv.incVat, 2) : '',
@@ -19,6 +19,9 @@ function fillMail(text, p, L = p.offer.lang, extra = {}) {
   };
   return text.replace(/\{(\w+)\}/g, (m, k) => (k in v ? String(v[k]) : m));
 }
+
+/** The client's first name, for the greeting. Business tone keeps the full name. */
+const firstName = (p) => (p.client || '').trim().split(/\s+/)[0] || '';
 
 const talkLayout = () => `<div class="cols"><section class="card mail-card" data-sec="mail"></section><div class="stack"><section class="card" data-sec="write"></section><section class="card" data-sec="log"></section></div></div>`;
 const TALK = {
@@ -37,7 +40,7 @@ const TALK = {
       <div class="row2"><div class="f"><span>Tone</span>${seg('tone', MAIL_TONES, sel.tone)}</div><div class="f"><span>Language</span>${seg('lang', [['nl', 'Nederlands'], ['en', 'English']], sel.lang)}</div></div>
       ${m ? `<div class="grid">${F('To', 'st.draft.mail.to', { type: 'email', cls: 'wide' })}${F('Subject', 'st.draft.mail.subject', { type: 'text', cls: 'wide' })}${TA('Message', 'st.draft.mail.body', { rows: 12 })}</div>
         ${/\[[^\]]+\]/.test(m.body) ? '<p class="hint">Fill in the parts in [square brackets] before sending.</p>' : ''}
-        <div class="acts"><button class="primary" data-act="sendmail" data-how="mail">Open in mail</button>${p.phone ? '<button data-act="sendmail" data-how="wa">WhatsApp</button>' : ''}<button data-act="sendmail" data-how="copy">Copy</button></div>`
+        <div class="acts"><button class="primary" data-act="sendmail" data-how="mail">Open in mail</button>${p.phone ? '<button data-act="sendmail" data-how="wa">WhatsApp</button>' : ''}<button data-act="sendmail" data-how="copy">Copy</button><button data-act="mailsave">Save as template</button></div>`
         : '<p class="empty">Pick a situation. The text fills in with the client, dates and amounts of this project.</p>'}`;
   },
   write() {
@@ -73,7 +76,9 @@ Object.assign(A, {
     }
     if (!t) return;
     const lang = t.lang || p.offer.lang, extra = { change: d.change ?? cur.change ?? '' };
-    dr.mail = { tpl: t.id, sit: t.sit, tone: t.tone, lang, change: extra.change, to: cur.to || p.email, subject: fillMail(t.subject, p, lang, extra), body: fillMail(t.body, p, lang, extra) };
+    if (t.tone === 'business' && p.client) extra.client = p.client;
+    const to = cur.pid === p.id && cur.to ? cur.to : p.email || '';
+    dr.mail = { pid: p.id, tpl: t.id, sit: t.sit, tone: t.tone, lang, change: extra.change, to, subject: fillMail(t.subject, p, lang, extra), body: fillMail(t.body, p, lang, extra) };
   },
   logtalk() {
     const p = P(), dr = (state.draft ??= {});
@@ -88,6 +93,15 @@ Object.assign(A, {
     if (k < 0) return;
     const [e] = p.talk.splice(k, 1);
     undoable('Removed from the history.', () => { p.talk.splice(k, 0, e); });
+  },
+  /** Saves the message as your own template: the client's name, address and your details go back to placeholders. */
+  mailsave() {
+    const p = P(), m = state.draft.mail, co = state.settings.company;
+    const back = (x) => [[p.client, '{name}'], [firstName(p), '{client}'], [p.geo?.label || p.address, '{address}'], [co.owner, '{owner}'], [co.name, '{company}'], [co.phone, '{phone}']]
+      .filter(([v]) => v && v.length > 2).reduce((t, [v, k]) => t.split(v).join(k), x);
+    const t = { id: uid(), name: m.subject.slice(0, 40) || 'My template', lang: m.lang, subject: back(m.subject), body: back(m.body) };
+    state.settings.mails.push(t); m.tpl = t.id;
+    undoable(`Saved as template: ${t.name}. It sits under Your own.`, () => { state.settings.mails.splice(state.settings.mails.indexOf(t), 1); });
   },
   sendmail(d) {
     const p = P(), m = state.draft.mail, text = `${m.subject}\n\n${m.body}`;

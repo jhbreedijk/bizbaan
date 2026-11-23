@@ -167,7 +167,7 @@ Object.assign(A, {
     const q = p.request, s = Calc.schedule(p), S = projectSum(p);
     const notes = [label(p), p.geo?.label || p.address, `Client: ${[p.client, p.phone, p.email].filter(Boolean).join(', ')}`, s.start ? `Planned: ${day(s.start)} to ${day(s.end)}` : '',
       S.cur ? `Agreed: ${eur(S.agreed, 2)} incl. VAT. Invoiced ${eur(S.invoiced, 2)}, paid ${eur(S.paid, 2)}.` : '', '', 'What they asked:', q.text || '', '', 'Call notes:', p.call.notes || '',
-      '', 'Checked:', ...CALL_CHECKS.filter(([k]) => p.call[k]).map(([, l]) => '- ' + l)].join('\r\n');
+      '', 'Checked:', ...callChecks().filter(([k]) => p.call[k]).map(([, l]) => '- ' + l)].join('\r\n');
     say('Packing the folder.');
     (async () => {
       entries.push({ name: `${root}/${FOLDER.request}/Request and call notes.txt`, blob: new Blob([notes]) });

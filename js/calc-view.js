@@ -21,14 +21,14 @@ const SECS = {
       const sv = p.services[s.id], b = `p.services.${s.id}.`, r = R.services.find((x) => x.id === s.id) || {};
       let body = '';
       if (s.kind === 'demo') body = F('Demolition days', b + 'days') + `<p class="hint wide">${O('h:' + s.id, `${num(r.hours)} hours at ${eur(p.rate)}`)}</p>`;
-      else if (s.kind === 'sub') body = F("Subcontractor's total", b + 'total', { unit: '€' });
+      else if (s.kind === 'sub') body = s.fixed ? F('What it is', b + 'desc', { type: 'text', ph: s.id === 'extra' ? 'Built-in bench, hallway' : s.en }) + F('Price', b + 'total', { unit: '€' }) : F("Subcontractor's total", b + 'total', { unit: '€' });
       else if (s.kind === 'pieces') body = `<div class="wide rows">${(sv.pieces || []).map((_, i) => `<div class="row3">${F('Piece', `${b}pieces.${i}.name`, { type: 'text', ph: 'Wardrobe' })}${F('Amount', `${b}pieces.${i}.qty`, { ph: '1' })}${F('Price each', `${b}pieces.${i}.price`, { unit: '€' })}<button class="x" data-act="delpiece" data-i="${i}" aria-label="Remove piece">×</button></div>`).join('')}<button data-act="addpiece">Add a piece</button></div>`;
       else {
         body = F('Amount', b + 'm2', { unit: 'm²' }) + `<div class="f"><span>Paid</span>${SEG(b + 'mode', [['m2', 'per m²'], ['hour', 'per hour']])}</div>`;
         body += sv.mode === 'hour'
           ? F('Workers', b + 'workers') + F('Days', b + 'days') + `<p class="hint wide">${O('h:' + s.id, `${num(r.hours)} hours at ${eur(p.rate)}`)}</p>`
-          : F(s.id === 'extra' ? 'Price' : 'Labour', b + 'labour', { unit: '€/m²' });
-        if (s.id === 'tiling' && !sv.inclMat) body += F('Tiles', b + 'tilePrice', { unit: '€/m²' }) + F('Tile waste', b + 'tileWaste', { unit: '%' }) + F('Glue and primer', b + 'gluePrice', { unit: '€/m²' });
+          : F('Labour', b + 'labour', { unit: '€/m²' });
+        if (s.id === 'tiling' && !sv.inclMat) body += F('Tiles', b + 'tilePrice', { unit: '€/m²' }) + F('Tile waste', b + 'tileWaste', { unit: '%' }) + tilingSupplies(p);
         if (s.matM2) body += F('Materials', b + 'matM2', { unit: '€/m²' });
         if (s.vatChoice) body += `<div class="f"><span>VAT</span>${SEG(b + 'vat', [[21, '21%'], [9, '9%']])}</div>`;
         if (s.incl) body += `<div class="f wide">${SW('Price includes materials', b + 'inclMat')}</div>`;
@@ -64,13 +64,13 @@ const SECS = {
     h += row(F('There and back', 'p.costs.km', { unit: 'km' }) + F('Diesel', 'p.costs.diesel', { unit: '€/l' }) + `<p class="hint wide">${O('distnote', p.distNote || '')}</p><p class="hint wide">${O('dieselnote', state.settings.dieselDate && n(k.diesel) === n(state.settings.dieselPrice) ? `Dutch average of ${day(Date.parse(state.settings.dieselDate))}, from CBS` : '')}</p>`, 'transport', c.transport);
     const opts = p.parkOptions || [];
     h += row(F('Parking per day', 'p.costs.parkingDay', { unit: '€' }) + `<p class="hint">${O('parknote', p.parkNote || '')}</p>` +
-      (opts.length > 1 ? `<div class="chips wide">${opts.map((o, i) => `<button type="button" class="chip sm ${n(k.parkingDay) === o.day ? 'on' : ''}" data-act="park" data-i="${i}">${eur(o.hourly, 2)}/h · ${esc(o.area)} · ${o.metres} m</button>`).join('')}</div>` : ''), 'parking', c.parking);
+      (opts.length > 1 ? `<div class="chips wide">${opts.map((o, i) => `<button type="button" class="chip sm ${n(k.parkingDay) === o.day ? 'on' : ''}" data-act="park" data-i="${i}">${eur(o.day)} a day (${eur(o.hourly, 2)}/h) · ${o.metres} m</button>`).join('')}</div>` : ''), 'parking', c.parking);
     h += row(F('Food per day', 'p.costs.food', { unit: '€' }) + '<p class="hint">At cost, added after the margins.</p>', 'food', c.food);
     if (R.up) {
       h += row(`<div class="f">${SW('Floor extra', 'p.costs.floorOn')}</div>` + (k.floorOn ? F('Per floor', 'p.costs.floorPct', { unit: '%' }) : ''), 'floorExtra', c.floorExtra);
       h += row(`<div class="f">${SW('Crane rental', 'p.costs.craneOn')}</div>` + (k.craneOn ? F('Crane days', 'p.costs.craneDays') + F('Per day', 'p.costs.cranePerDay', { unit: '€' }) : ''), 'crane', c.crane);
     }
-    h += row(`<div class="f">${SW('Waste container', 'p.costs.containerOn')}</div>` + (k.containerOn ? F('Container', 'p.costs.containerBase', { unit: '€' }) + F(`Permit${mun ? ' ' + esc(mun) : ''}`, 'p.costs.permit', { unit: '€' }) : ''), 'container', c.container);
+    h += row(`<div class="f">${SW('Waste container', 'p.costs.containerOn')}</div>` + (k.containerOn ? F('Containers', 'p.costs.containerQty', { ph: '1' }) + F('Price each', 'p.costs.containerBase', { unit: '€' }) + F(`Permit${mun ? ' ' + esc(mun) : ''}`, 'p.costs.permit', { unit: '€' }) : ''), 'container', c.container);
     h += row(`<div class="f">${SW('Rental toilet', 'p.costs.toiletOn')}</div>` + (k.toiletOn ? F('Per week', 'p.costs.toiletPerWeek', { unit: '€' }) + `<p class="hint">${O('tweeks', `${R.sched.weeks} weeks`)}</p>` : ''), 'toilet', c.toilet);
     h += row(F('Waste', 'p.costs.waste', { unit: '€' }), 'waste', c.waste);
     h += row(F('Additional costs', 'p.costs.additional', { unit: '€' }), 'additional', c.additional);
@@ -126,10 +126,10 @@ async function locate(p) {
   p.distNote = `${num(p.costs.km)} km there and back, ${how}.`;
   return '';
 }
-const parkNote = (p, o, best) => `Estimate: ${eur(o.hourly, 2)} per hour × ${num(p.hpd)} h, zone ${o.area} at ${o.metres} m${best ? ', the highest rate within 400 m' : ''}.`;
+const parkNote = (p, o, best) => `Estimate for a full day: ${o.day === o.dayCap ? `day ticket ${eur(o.dayCap, 2)}` : `${eur(o.hourly, 2)} per hour × ${num(p.hpd)} h`}, zone ${o.area} at ${o.metres} m${best ? ', the nearest paid zone' : ''}. Know it is cheaper? Type it in.`;
 async function parkingFor(p) {
   const list = await Lookups.parking(p.geo);
-  p.parkOptions = list.map((x) => ({ ...x, day: r2(x.hourly * n(p.hpd)) }));
+  p.parkOptions = list.map((x) => ({ ...x, day: x.dayCap > 0 ? Math.min(x.dayCap, r2(x.hourly * n(p.hpd))) : r2(x.hourly * n(p.hpd)) }));
   p.costs.parkingDay = p.parkOptions[0].day;
   p.parkNote = parkNote(p, p.parkOptions[0], true);
 }
@@ -219,7 +219,7 @@ function joke() {
 
 Object.assign(A, {
   svc(d) { const p = P(), sv = p.services[d.id]; if (sv) sv.on = !sv.on; else p.services[d.id] = newService(d.id); },
-  addpiece() { const sv = P().services.furniture; (sv.pieces ??= []).push({ name: '', qty: '', price: '' }); },
+  addpiece() { const sv = P().services.furniture; (sv.pieces ??= []).push({ name: 'Wardrobe', qty: 1, price: '' }); },
   delpiece(d) { P().services.furniture.pieces.splice(+d.i, 1); },
   matoff(d) { P().matOff.push(d.id); delete P().matQty[d.id]; },
   matrestore() { P().matOff = []; },
@@ -245,3 +245,12 @@ Object.assign(A, {
   live() { ui.open.pmenu = false; live(); return false; },
   prices() { say('Asking Bouwmaat.'); prices(true).then((m) => { ui.status = m || 'No material has a Bouwmaat link yet.'; paint(true); }); return false; },
 });
+
+/** Tiling without materials in the price: one switch per saved material linked to tiling (glue, primer). On means you supply it;
+    the amount follows the m² and the price comes from Settings, Materials. */
+function tilingSupplies(p) {
+  const mats = state.materials.filter((m) => (m.services || []).includes('tiling'));
+  if (!mats.length) return `<p class="hint wide">Glue and primer come from your saved materials. <button class="link" data-act="view" data-v="settings">Add them under Settings, Materials</button> and link them to Tiling.</p>`;
+  return `<div class="f wide sw-row">${mats.map((m) => `<label class="sw"><input type="checkbox" data-act="tilemat" data-id="${m.id}" ${p.matOff.includes(m.id) ? '' : 'checked'}><b></b><span>${esc(m.name)}</span></label>`).join('')}<p class="hint">On: you supply it. The amount follows the m².</p></div>`;
+}
+Object.assign(A, { tilemat(d) { const off = P().matOff, i = off.indexOf(d.id); if (i >= 0) off.splice(i, 1); else { off.push(d.id); delete P().matQty[d.id]; } } });
